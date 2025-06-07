@@ -89,6 +89,7 @@ export interface Transaction {
   paymentMedium?: PaymentMedium;
   chequeDetails?: {
     bankName: string;
+    chequeNumber: string;
     chequeName: string;
     chequeDate: string;
   };

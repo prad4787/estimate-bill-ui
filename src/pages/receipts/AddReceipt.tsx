@@ -5,7 +5,6 @@ import toast from 'react-hot-toast';
 import { useReceiptStore } from '../../store/receiptStore';
 import { useClientStore } from '../../store/clientStore';
 import { Transaction, Client, PaymentType, PaymentMedium } from '../../types';
-import PaymentMediumModal from '../../components/payment/PaymentMediumModal';
 import ClientModal from '../../components/clients/ClientModal';
 
 const AddReceipt: React.FC = () => {
@@ -21,8 +20,6 @@ const AddReceipt: React.FC = () => {
     amount: 0,
     paymentType: 'cash',
   }]);
-  const [activeTransactionIndex, setActiveTransactionIndex] = useState<number | null>(null);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [savedPaymentMethods, setSavedPaymentMethods] = useState<PaymentMedium[]>([]);
   const [showClientModal, setShowClientModal] = useState(false);
@@ -84,41 +81,6 @@ const AddReceipt: React.FC = () => {
     }
   };
 
-  const handlePaymentMethodSelect = (index: number, methodIndex?: number) => {
-    if (methodIndex !== undefined) {
-      // User selected an existing payment method
-      const selectedMethod = getRelevantMethods(transactions[index].paymentType)[methodIndex];
-      const newTransactions = [...transactions];
-      newTransactions[index] = {
-        ...newTransactions[index],
-        paymentMedium: selectedMethod,
-      };
-      setTransactions(newTransactions);
-    } else {
-      // User wants to create a new payment method
-      setActiveTransactionIndex(index);
-      setShowPaymentModal(true);
-    }
-  };
-
-  const handlePaymentMethodSave = (paymentMethod: PaymentMedium) => {
-    if (activeTransactionIndex !== null) {
-      const newTransactions = [...transactions];
-      newTransactions[activeTransactionIndex] = {
-        ...newTransactions[activeTransactionIndex],
-        paymentMedium: paymentMethod,
-      };
-      setTransactions(newTransactions);
-
-      // Save to localStorage for future use
-      const updatedMethods = [...savedPaymentMethods, paymentMethod];
-      setSavedPaymentMethods(updatedMethods);
-      localStorage.setItem('billmanager-payment-methods', JSON.stringify(updatedMethods));
-    }
-    setShowPaymentModal(false);
-    setActiveTransactionIndex(null);
-  };
-
   const getRelevantMethods = (paymentType: PaymentType): PaymentMedium[] => {
     return savedPaymentMethods.filter(method => method.type === paymentType);
   };
@@ -129,58 +91,144 @@ const AddReceipt: React.FC = () => {
         return `${method.bankName} - ${method.accountName} (${method.accountNumber})`;
       case 'wallet':
         return `${method.walletName} - ${method.accountName} (${method.accountNumber})`;
+      case 'cash':
+        return 'Cash';
       default:
         return 'Payment Method';
     }
   };
 
   const renderPaymentMethodSelector = (transaction: Omit<Transaction, 'id'>, index: number) => {
-    if (transaction.paymentType === 'cash' || transaction.paymentType === 'cheque') {
-      return null;
+    if (transaction.paymentType === 'cash') {
+      return null; // Cash only needs amount
     }
 
+    if (transaction.paymentType === 'cheque') {
+      return (
+        <div className="space-y-4 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+          <h3 className="text-sm font-semibold text-yellow-800">Cheque Details</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="form-label">Bank Name</label>
+              <input
+                type="text"
+                className="form-input"
+                value={transaction.chequeDetails?.bankName || ''}
+                onChange={(e) => handleTransactionChange(index, 'chequeDetails', { 
+                  ...transaction.chequeDetails,
+                  bankName: e.target.value 
+                })}
+                placeholder="Enter bank name"
+                required
+              />
+            </div>
+            <div>
+              <label className="form-label">Cheque Number</label>
+              <input
+                type="text"
+                className="form-input"
+                value={transaction.chequeDetails?.chequeNumber || ''}
+                onChange={(e) => handleTransactionChange(index, 'chequeDetails', { 
+                  ...transaction.chequeDetails,
+                  chequeNumber: e.target.value 
+                })}
+                placeholder="Enter cheque number"
+                required
+              />
+            </div>
+            <div>
+              <label className="form-label">Name on Cheque</label>
+              <input
+                type="text"
+                className="form-input"
+                value={transaction.chequeDetails?.chequeName || ''}
+                onChange={(e) => handleTransactionChange(index, 'chequeDetails', { 
+                  ...transaction.chequeDetails,
+                  chequeName: e.target.value 
+                })}
+                placeholder="Enter name on cheque"
+                required
+              />
+            </div>
+            <div>
+              <label className="form-label">Exchange Date</label>
+              <input
+                type="date"
+                className="form-input"
+                value={transaction.chequeDetails?.chequeDate || ''}
+                onChange={(e) => handleTransactionChange(index, 'chequeDetails', { 
+                  ...transaction.chequeDetails,
+                  chequeDate: e.target.value 
+                })}
+                required
+              />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // For bank and wallet transactions
     const relevantMethods = getRelevantMethods(transaction.paymentType);
+
+    if (relevantMethods.length === 0) {
+      return (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+          <p className="text-sm text-red-800 mb-3">
+            No {transaction.paymentType} accounts found. Please add a {transaction.paymentType} account first.
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate('/payments')}
+            className="btn btn-outline btn-sm"
+          >
+            Manage Payment Methods
+          </button>
+        </div>
+      );
+    }
 
     return (
       <div className="space-y-3">
-        <label className="form-label">Payment Method</label>
-        
-        {relevantMethods.length > 0 && (
-          <div className="space-y-2">
-            <label className="form-label text-xs text-gray-600">Select Existing Method</label>
-            <div className="grid gap-2">
-              {relevantMethods.map((method, methodIndex) => (
-                <div
-                  key={methodIndex}
-                  className={`p-3 border rounded-xl cursor-pointer transition-all duration-200 ${
-                    transaction.paymentMedium === method
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                  }`}
-                  onClick={() => handlePaymentMethodSelect(index, methodIndex)}
-                >
+        <label className="form-label">Select {transaction.paymentType === 'bank' ? 'Bank Account' : 'E-Wallet'}</label>
+        <div className="space-y-2">
+          {relevantMethods.map((method, methodIndex) => (
+            <div
+              key={methodIndex}
+              className={`p-3 border rounded-xl cursor-pointer transition-all duration-200 ${
+                transaction.paymentMedium === method
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+              }`}
+              onClick={() => handleTransactionChange(index, 'paymentMedium', method)}
+            >
+              <div className="flex justify-between items-center">
+                <div>
                   <div className="text-sm font-medium text-gray-900">
                     {formatPaymentMethodDisplay(method)}
                   </div>
+                  {method.balance !== undefined && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      Balance: ${method.balance.toFixed(2)}
+                    </div>
+                  )}
                 </div>
-              ))}
+                <div className={`w-4 h-4 rounded-full border-2 ${
+                  transaction.paymentMedium === method
+                    ? 'border-blue-500 bg-blue-500'
+                    : 'border-gray-300'
+                }`}>
+                  {transaction.paymentMedium === method && (
+                    <div className="w-2 h-2 bg-white rounded-full m-0.5"></div>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        )}
-
-        <div className="pt-2 border-t border-gray-200">
-          <button
-            type="button"
-            onClick={() => handlePaymentMethodSelect(index)}
-            className="btn btn-outline w-full"
-          >
-            <Plus size={16} />
-            Add New Payment Method
-          </button>
+          ))}
         </div>
 
         {transaction.paymentMedium && (
-          <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-xl">
+          <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-xl">
             <div className="text-sm text-green-800">
               <strong>Selected:</strong> {formatPaymentMethodDisplay(transaction.paymentMedium)}
             </div>
@@ -206,7 +254,8 @@ const AddReceipt: React.FC = () => {
     // Validate required fields for cheque transactions
     const invalidCheque = transactions.some(t => 
       t.paymentType === 'cheque' && 
-      (!t.chequeDetails?.bankName || !t.chequeDetails?.chequeName || !t.chequeDetails?.chequeDate)
+      (!t.chequeDetails?.bankName || !t.chequeDetails?.chequeNumber || 
+       !t.chequeDetails?.chequeName || !t.chequeDetails?.chequeDate)
     );
 
     if (invalidCheque) {
@@ -220,7 +269,7 @@ const AddReceipt: React.FC = () => {
     );
 
     if (invalidPaymentMethod) {
-      toast.error('Please select or add payment methods for bank/wallet transactions');
+      toast.error('Please select payment methods for bank/wallet transactions');
       return;
     }
 
@@ -423,56 +472,7 @@ const AddReceipt: React.FC = () => {
                     </div>
                   </div>
 
-                  {transaction.paymentType === 'cheque' && (
-                    <div className="space-y-4 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
-                      <h3 className="text-sm font-semibold text-yellow-800">Cheque Details</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <label className="form-label">Bank Name</label>
-                          <input
-                            type="text"
-                            className="form-input"
-                            value={transaction.chequeDetails?.bankName || ''}
-                            onChange={(e) => handleTransactionChange(index, 'chequeDetails', { 
-                              ...transaction.chequeDetails,
-                              bankName: e.target.value 
-                            })}
-                            placeholder="Enter bank name"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="form-label">Name on Cheque</label>
-                          <input
-                            type="text"
-                            className="form-input"
-                            value={transaction.chequeDetails?.chequeName || ''}
-                            onChange={(e) => handleTransactionChange(index, 'chequeDetails', { 
-                              ...transaction.chequeDetails,
-                              chequeName: e.target.value 
-                            })}
-                            placeholder="Enter name on cheque"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="form-label">Cheque Date</label>
-                          <input
-                            type="date"
-                            className="form-input"
-                            value={transaction.chequeDetails?.chequeDate || ''}
-                            onChange={(e) => handleTransactionChange(index, 'chequeDetails', { 
-                              ...transaction.chequeDetails,
-                              chequeDate: e.target.value 
-                            })}
-                            required
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {(transaction.paymentType === 'bank' || transaction.paymentType === 'wallet') && (
+                  {(transaction.paymentType === 'bank' || transaction.paymentType === 'wallet' || transaction.paymentType === 'cheque') && (
                     <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
                       {renderPaymentMethodSelector(transaction, index)}
                     </div>
@@ -516,15 +516,6 @@ const AddReceipt: React.FC = () => {
           </button>
         </div>
       </form>
-
-      <PaymentMediumModal
-        isOpen={showPaymentModal}
-        onClose={() => {
-          setShowPaymentModal(false);
-          setActiveTransactionIndex(null);
-        }}
-        onSave={handlePaymentMethodSave}
-      />
 
       <ClientModal
         isOpen={showClientModal}
