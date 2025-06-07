@@ -52,10 +52,12 @@ export type PaymentType = 'cash' | 'wallet' | 'bank' | 'cheque';
 
 export interface BasePaymentMedium {
   type: PaymentType;
+  balance?: number;
 }
 
 export interface CashPayment extends BasePaymentMedium {
   type: 'cash';
+  balance?: number;
 }
 
 export interface WalletPayment extends BasePaymentMedium {
@@ -76,7 +78,6 @@ export interface BankPayment extends BasePaymentMedium {
 
 export interface ChequePayment extends BasePaymentMedium {
   type: 'cheque';
-  exchangeDate: string;
 }
 
 export type PaymentMedium = CashPayment | WalletPayment | BankPayment | ChequePayment;
