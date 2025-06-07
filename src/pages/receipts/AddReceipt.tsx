@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, ArrowLeft, UserPlus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useReceiptStore } from '../../store/receiptStore';
 import { useClientStore } from '../../store/clientStore';
 import { Transaction, Client, PaymentType, PaymentMedium } from '../../types';
 import PaymentMediumModal from '../../components/payment/PaymentMediumModal';
+import ClientModal from '../../components/clients/ClientModal';
 
 const AddReceipt: React.FC = () => {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ const AddReceipt: React.FC = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [savedPaymentMethods, setSavedPaymentMethods] = useState<PaymentMedium[]>([]);
+  const [showClientModal, setShowClientModal] = useState(false);
 
   useEffect(() => {
     fetchClients();
@@ -37,6 +39,12 @@ const AddReceipt: React.FC = () => {
   const filteredClients = clients.filter(client =>
     client.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleClientCreated = (newClient: Client) => {
+    setSelectedClient(newClient.id);
+    setShowClientModal(false);
+    fetchClients(); // Refresh the clients list
+  };
 
   const handleTransactionChange = (index: number, field: keyof Transaction | 'chequeDetails', value: any) => {
     const newTransactions = [...transactions];
@@ -144,9 +152,9 @@ const AddReceipt: React.FC = () => {
               {relevantMethods.map((method, methodIndex) => (
                 <div
                   key={methodIndex}
-                  className={`p-3 border rounded-lg cursor-pointer transition-all duration-200 ${
+                  className={`p-3 border rounded-xl cursor-pointer transition-all duration-200 ${
                     transaction.paymentMedium === method
-                      ? 'border-primary-500 bg-primary-50'
+                      ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                   }`}
                   onClick={() => handlePaymentMethodSelect(index, methodIndex)}
@@ -166,13 +174,13 @@ const AddReceipt: React.FC = () => {
             onClick={() => handlePaymentMethodSelect(index)}
             className="btn btn-outline w-full"
           >
-            <Plus size={16} className="mr-2" />
+            <Plus size={16} />
             Add New Payment Method
           </button>
         </div>
 
         {transaction.paymentMedium && (
-          <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+          <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-xl">
             <div className="text-sm text-green-800">
               <strong>Selected:</strong> {formatPaymentMethodDisplay(transaction.paymentMedium)}
             </div>
@@ -240,21 +248,29 @@ const AddReceipt: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-fade-in">
       <div>
         <button 
           onClick={() => navigate('/receipts')}
-          className="inline-flex items-center text-gray-500 hover:text-gray-700 mb-4"
+          className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6 transition-colors duration-200"
         >
-          <ArrowLeft size={16} className="mr-1" />
+          <ArrowLeft size={18} className="mr-2" />
           Back to Receipts
         </button>
-        <h1>Create Receipt</h1>
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">Create Receipt</h1>
+            <p className="text-gray-600 mt-2">Record payment transactions from your clients.</p>
+          </div>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="card p-6">
-          <div className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <div className="card">
+          <div className="card-header">
+            <h2 className="text-xl font-semibold text-gray-900">Receipt Information</h2>
+          </div>
+          <div className="card-body">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="form-label">Date</label>
@@ -270,91 +286,119 @@ const AddReceipt: React.FC = () => {
               <div className="relative">
                 <label className="form-label">Client</label>
                 {selectedClient ? (
-                  <div className="flex justify-between items-center p-3 border border-gray-300 rounded-lg bg-gray-50">
+                  <div className="flex justify-between items-center p-4 border border-gray-300 rounded-xl bg-gradient-to-r from-green-50 to-green-100">
                     <div>
-                      <div className="font-medium text-gray-900">
+                      <div className="font-semibold text-gray-900">
                         {clients.find(c => c.id === selectedClient)?.name}
                       </div>
+                      {clients.find(c => c.id === selectedClient)?.address && (
+                        <div className="text-sm text-gray-600">
+                          {clients.find(c => c.id === selectedClient)?.address}
+                        </div>
+                      )}
                     </div>
                     <button
                       type="button"
                       onClick={() => setSelectedClient('')}
-                      className="text-gray-500 hover:text-red-600 transition-colors"
+                      className="btn btn-outline btn-sm"
                     >
                       Change
                     </button>
                   </div>
                 ) : (
-                  <div className="relative">
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder="Search clients..."
-                      value={searchTerm}
-                      onChange={(e) => {
-                        setSearchTerm(e.target.value);
-                        setShowClientSearch(true);
-                      }}
-                    />
-                    {showClientSearch && searchTerm && (
-                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                        {filteredClients.length > 0 ? (
-                          filteredClients.map(client => (
-                            <div
-                              key={client.id}
-                              className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-                              onClick={() => {
-                                setSelectedClient(client.id);
-                                setShowClientSearch(false);
-                                setSearchTerm('');
-                              }}
-                            >
-                              <div className="font-medium text-gray-900">{client.name}</div>
-                              {client.address && (
-                                <div className="text-sm text-gray-500">{client.address}</div>
-                              )}
+                  <div className="space-y-4">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="Search existing clients..."
+                        value={searchTerm}
+                        onChange={(e) => {
+                          setSearchTerm(e.target.value);
+                          setShowClientSearch(true);
+                        }}
+                      />
+                      {showClientSearch && searchTerm && (
+                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                          {filteredClients.length > 0 ? (
+                            filteredClients.map(client => (
+                              <div
+                                key={client.id}
+                                className="p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                                onClick={() => {
+                                  setSelectedClient(client.id);
+                                  setShowClientSearch(false);
+                                  setSearchTerm('');
+                                }}
+                              >
+                                <div className="font-medium text-gray-900">{client.name}</div>
+                                {client.address && (
+                                  <div className="text-sm text-gray-500">{client.address}</div>
+                                )}
+                              </div>
+                            ))
+                          ) : (
+                            <div className="p-4 text-gray-500 text-center">
+                              No clients found
                             </div>
-                          ))
-                        ) : (
-                          <div className="p-3 text-gray-500 text-center">
-                            No clients found
-                          </div>
-                        )}
-                      </div>
-                    )}
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1 border-t border-gray-300"></div>
+                      <span className="text-sm text-gray-500 font-medium">OR</span>
+                      <div className="flex-1 border-t border-gray-300"></div>
+                    </div>
+                    
+                    <button
+                      type="button"
+                      onClick={() => setShowClientModal(true)}
+                      className="btn btn-outline w-full"
+                    >
+                      <UserPlus size={18} />
+                      Create New Client
+                    </button>
                   </div>
                 )}
               </div>
             </div>
+          </div>
+        </div>
 
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-lg font-semibold text-gray-900">Transactions</h2>
-                <div className="text-lg font-semibold text-primary-600">
-                  Total: ${getTotalAmount().toFixed(2)}
-                </div>
+        <div className="card">
+          <div className="card-header">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-900">Transactions</h2>
+              <div className="text-xl font-bold text-green-600">
+                Total: ${getTotalAmount().toFixed(2)}
               </div>
-              
-              {transactions.map((transaction, index) => (
-                <div key={index} className="relative card p-6 border-l-4 border-l-primary-500">
-                  {transactions.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeTransaction(index)}
-                      className="absolute top-4 right-4 text-gray-400 hover:text-red-600 transition-colors"
-                      title="Remove transaction"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  )}
+            </div>
+          </div>
+          <div className="card-body space-y-6">
+            {transactions.map((transaction, index) => (
+              <div key={index} className="relative card border-l-4 border-l-green-500">
+                {transactions.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeTransaction(index)}
+                    className="absolute top-4 right-4 action-btn action-btn-danger"
+                    title="Remove transaction"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                )}
 
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="form-label">Amount ($)</label>
+                <div className="card-body space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="form-label">Amount ($)</label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                         <input
                           type="number"
-                          className="form-input"
+                          className="form-input pl-8"
                           value={transaction.amount || ''}
                           onChange={(e) => handleTransactionChange(index, 'amount', Number(e.target.value))}
                           min="0"
@@ -363,92 +407,92 @@ const AddReceipt: React.FC = () => {
                           required
                         />
                       </div>
-                      <div>
-                        <label className="form-label">Payment Type</label>
-                        <select
-                          className="form-input"
-                          value={transaction.paymentType}
-                          onChange={(e) => handleTransactionChange(index, 'paymentType', e.target.value as PaymentType)}
-                        >
-                          <option value="cash">Cash</option>
-                          <option value="bank">Bank Transfer</option>
-                          <option value="wallet">E-Wallet</option>
-                          <option value="cheque">Cheque</option>
-                        </select>
-                      </div>
                     </div>
+                    <div>
+                      <label className="form-label">Payment Type</label>
+                      <select
+                        className="form-input"
+                        value={transaction.paymentType}
+                        onChange={(e) => handleTransactionChange(index, 'paymentType', e.target.value as PaymentType)}
+                      >
+                        <option value="cash">Cash</option>
+                        <option value="bank">Bank Transfer</option>
+                        <option value="wallet">E-Wallet</option>
+                        <option value="cheque">Cheque</option>
+                      </select>
+                    </div>
+                  </div>
 
-                    {transaction.paymentType === 'cheque' && (
-                      <div className="space-y-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <h3 className="text-sm font-semibold text-yellow-800">Cheque Details</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div>
-                            <label className="form-label">Bank Name</label>
-                            <input
-                              type="text"
-                              className="form-input"
-                              value={transaction.chequeDetails?.bankName || ''}
-                              onChange={(e) => handleTransactionChange(index, 'chequeDetails', { 
-                                ...transaction.chequeDetails,
-                                bankName: e.target.value 
-                              })}
-                              placeholder="Enter bank name"
-                              required
-                            />
-                          </div>
-                          <div>
-                            <label className="form-label">Name on Cheque</label>
-                            <input
-                              type="text"
-                              className="form-input"
-                              value={transaction.chequeDetails?.chequeName || ''}
-                              onChange={(e) => handleTransactionChange(index, 'chequeDetails', { 
-                                ...transaction.chequeDetails,
-                                chequeName: e.target.value 
-                              })}
-                              placeholder="Enter name on cheque"
-                              required
-                            />
-                          </div>
-                          <div>
-                            <label className="form-label">Cheque Date</label>
-                            <input
-                              type="date"
-                              className="form-input"
-                              value={transaction.chequeDetails?.chequeDate || ''}
-                              onChange={(e) => handleTransactionChange(index, 'chequeDetails', { 
-                                ...transaction.chequeDetails,
-                                chequeDate: e.target.value 
-                              })}
-                              required
-                            />
-                          </div>
+                  {transaction.paymentType === 'cheque' && (
+                    <div className="space-y-4 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+                      <h3 className="text-sm font-semibold text-yellow-800">Cheque Details</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="form-label">Bank Name</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={transaction.chequeDetails?.bankName || ''}
+                            onChange={(e) => handleTransactionChange(index, 'chequeDetails', { 
+                              ...transaction.chequeDetails,
+                              bankName: e.target.value 
+                            })}
+                            placeholder="Enter bank name"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">Name on Cheque</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={transaction.chequeDetails?.chequeName || ''}
+                            onChange={(e) => handleTransactionChange(index, 'chequeDetails', { 
+                              ...transaction.chequeDetails,
+                              chequeName: e.target.value 
+                            })}
+                            placeholder="Enter name on cheque"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">Cheque Date</label>
+                          <input
+                            type="date"
+                            className="form-input"
+                            value={transaction.chequeDetails?.chequeDate || ''}
+                            onChange={(e) => handleTransactionChange(index, 'chequeDetails', { 
+                              ...transaction.chequeDetails,
+                              chequeDate: e.target.value 
+                            })}
+                            required
+                          />
                         </div>
                       </div>
-                    )}
+                    </div>
+                  )}
 
-                    {(transaction.paymentType === 'bank' || transaction.paymentType === 'wallet') && (
-                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                        {renderPaymentMethodSelector(transaction, index)}
-                      </div>
-                    )}
-                  </div>
+                  {(transaction.paymentType === 'bank' || transaction.paymentType === 'wallet') && (
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                      {renderPaymentMethodSelector(transaction, index)}
+                    </div>
+                  )}
                 </div>
-              ))}
+              </div>
+            ))}
 
-              <button
-                type="button"
-                onClick={addTransaction}
-                className="btn btn-outline w-full"
-              >
-                <Plus size={16} className="mr-2" />
-                Add Another Transaction
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={addTransaction}
+              className="btn btn-outline w-full"
+            >
+              <Plus size={18} />
+              Add Another Transaction
+            </button>
           </div>
         </div>
 
-        <div className="flex justify-end gap-3">
+        <div className="flex justify-end gap-4">
           <button
             type="button"
             onClick={() => navigate('/receipts')}
@@ -461,7 +505,14 @@ const AddReceipt: React.FC = () => {
             className="btn btn-primary"
             disabled={isSubmitting}
           >
-            {isSubmitting ? 'Creating...' : 'Create Receipt'}
+            {isSubmitting ? (
+              <>
+                <div className="spinner" />
+                Creating...
+              </>
+            ) : (
+              'Create Receipt'
+            )}
           </button>
         </div>
       </form>
@@ -473,6 +524,12 @@ const AddReceipt: React.FC = () => {
           setActiveTransactionIndex(null);
         }}
         onSave={handlePaymentMethodSave}
+      />
+
+      <ClientModal
+        isOpen={showClientModal}
+        onClose={() => setShowClientModal(false)}
+        onClientCreated={handleClientCreated}
       />
     </div>
   );
