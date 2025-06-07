@@ -17,8 +17,8 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
           >
             <Menu size={20} />
           </button>
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-2 rounded-xl shadow-lg group-hover:shadow-xl transition-all duration-200 group-hover:scale-105">
+          <Link to="/" className="flex items-center gap-3">
+            <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-2 rounded-xl shadow-lg">
               <BarChart2 size={20} />
             </div>
             <span className="font-bold text-xl text-gray-900 tracking-tight">BillManager</span>
