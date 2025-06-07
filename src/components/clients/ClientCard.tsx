@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Edit2, Trash2, MapPin, FileText } from 'lucide-react';
+import { Edit2, Trash2, MapPin, FileText, Calendar } from 'lucide-react';
 import { Client } from '../../types';
 
 interface ClientCardProps {
@@ -32,61 +32,64 @@ const ClientCard: React.FC<ClientCardProps> = ({ client, onDelete }) => {
   };
 
   return (
-    <div className="card group">
-      <div className="p-5">
-        <div className="flex justify-between items-start">
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-1">
+    <div className="card group animate-fade-in">
+      <div className="card-body">
+        <div className="flex justify-between items-start mb-4">
+          <div className="flex-1">
+            <h3 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors duration-200">
               {client.name}
             </h3>
             
-            {client.panVat && (
-              <div className="flex items-center text-sm text-gray-500 mb-1">
-                <FileText size={14} className="mr-1" />
-                <span>{client.panVat}</span>
+            <div className="space-y-2">
+              {client.panVat && (
+                <div className="flex items-center text-sm text-gray-600">
+                  <FileText size={16} className="mr-2 text-gray-400" />
+                  <span>{client.panVat}</span>
+                </div>
+              )}
+              
+              {client.address && (
+                <div className="flex items-center text-sm text-gray-600">
+                  <MapPin size={16} className="mr-2 text-gray-400" />
+                  <span className="line-clamp-2">{client.address}</span>
+                </div>
+              )}
+              
+              <div className="flex items-center text-sm text-gray-500">
+                <Calendar size={16} className="mr-2 text-gray-400" />
+                <span>Added {formatDate(client.createdAt)}</span>
               </div>
-            )}
-            
-            {client.address && (
-              <div className="flex items-center text-sm text-gray-500 mb-2">
-                <MapPin size={14} className="mr-1" />
-                <span>{client.address}</span>
-              </div>
-            )}
-            
-            <div className="text-sm text-gray-500">
-              <span>Added on {formatDate(client.createdAt)}</span>
             </div>
           </div>
           
-          <div className="text-right">
-            <div className="text-lg font-medium">
+          <div className="text-right ml-4">
+            <div className="text-2xl font-bold text-gray-900 mb-1">
               {formatCurrency(client.openingBalance)}
             </div>
-            <div className="text-xs text-gray-500">
+            <div className="badge badge-primary">
               Opening Balance
             </div>
           </div>
         </div>
       </div>
       
-      <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
+      <div className="card-footer flex justify-between items-center">
         <div>
-          <span className="text-xs text-gray-500">
-            Client ID: {client.id.substring(0, 8)}...
+          <span className="text-xs text-gray-500 font-medium">
+            ID: {client.id.substring(0, 8)}...
           </span>
         </div>
-        <div className="flex space-x-2">
+        <div className="flex space-x-1">
           <Link
             to={`/clients/edit/${client.id}`}
-            className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-white rounded-md transition-colors"
+            className="action-btn action-btn-primary"
             title="Edit client"
           >
             <Edit2 size={16} />
           </Link>
           <button
             onClick={handleDelete}
-            className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-white rounded-md transition-colors"
+            className="action-btn action-btn-danger"
             title="Delete client"
           >
             <Trash2 size={16} />

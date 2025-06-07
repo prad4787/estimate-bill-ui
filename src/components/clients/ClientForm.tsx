@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Save, X } from 'lucide-react';
 import { ClientFormData, Client } from '../../types';
 
 interface ClientFormProps {
@@ -70,85 +71,105 @@ const ClientForm: React.FC<ClientFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label htmlFor="name" className="form-label">
-            Client Name <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            className={`form-input ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
-            placeholder="Enter client name"
-          />
-          {errors.name && (
-            <p className="mt-1 text-sm text-red-500">{errors.name}</p>
-          )}
+    <form onSubmit={handleSubmit} className="space-y-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="space-y-6">
+          <div>
+            <label htmlFor="name" className="form-label">
+              Client Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              className={`form-input ${errors.name ? 'error' : ''}`}
+              placeholder="Enter client name"
+            />
+            {errors.name && (
+              <p className="mt-2 text-sm text-red-600 flex items-center">
+                <X size={14} className="mr-1" />
+                {errors.name}
+              </p>
+            )}
+          </div>
+          
+          <div>
+            <label htmlFor="panVat" className="form-label">
+              PAN/VAT Number
+            </label>
+            <input
+              type="text"
+              id="panVat"
+              name="panVat"
+              value={formData.panVat}
+              onChange={handleChange}
+              className="form-input"
+              placeholder="Enter PAN/VAT number (optional)"
+            />
+            <p className="mt-2 text-sm text-gray-500">
+              Tax identification number for business clients
+            </p>
+          </div>
         </div>
-        
-        <div>
-          <label htmlFor="panVat" className="form-label">
-            PAN/VAT Number
-          </label>
-          <input
-            type="text"
-            id="panVat"
-            name="panVat"
-            value={formData.panVat}
-            onChange={handleChange}
-            className="form-input border-gray-300"
-            placeholder="Enter PAN/VAT number (optional)"
-          />
-        </div>
-        
-        <div className="md:col-span-2">
-          <label htmlFor="address" className="form-label">
-            Address
-          </label>
-          <textarea
-            id="address"
-            name="address"
-            value={formData.address}
-            onChange={handleChange}
-            rows={3}
-            className="form-input border-gray-300"
-            placeholder="Enter client address (optional)"
-          />
-        </div>
-        
-        <div>
-          <label htmlFor="openingBalance" className="form-label">
-            Opening Balance
-          </label>
-          <input
-            type="text"
-            id="openingBalance"
-            name="openingBalance"
-            value={formData.openingBalance}
-            onChange={handleChange}
-            className={`form-input ${errors.openingBalance ? 'border-red-500' : 'border-gray-300'}`}
-            placeholder="Enter opening balance"
-          />
-          {errors.openingBalance && (
-            <p className="mt-1 text-sm text-red-500">{errors.openingBalance}</p>
-          )}
-          <p className="mt-1 text-xs text-gray-500">
-            Enter the initial balance for this client. Default is 0.
-          </p>
+
+        <div className="space-y-6">
+          <div>
+            <label htmlFor="address" className="form-label">
+              Address
+            </label>
+            <textarea
+              id="address"
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              rows={4}
+              className="form-input"
+              placeholder="Enter client address (optional)"
+            />
+            <p className="mt-2 text-sm text-gray-500">
+              Complete business or residential address
+            </p>
+          </div>
+          
+          <div>
+            <label htmlFor="openingBalance" className="form-label">
+              Opening Balance
+            </label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+              <input
+                type="text"
+                id="openingBalance"
+                name="openingBalance"
+                value={formData.openingBalance}
+                onChange={handleChange}
+                className={`form-input pl-8 ${errors.openingBalance ? 'error' : ''}`}
+                placeholder="0.00"
+              />
+            </div>
+            {errors.openingBalance && (
+              <p className="mt-2 text-sm text-red-600 flex items-center">
+                <X size={14} className="mr-1" />
+                {errors.openingBalance}
+              </p>
+            )}
+            <p className="mt-2 text-sm text-gray-500">
+              Initial balance for this client account. Default is $0.00
+            </p>
+          </div>
         </div>
       </div>
       
-      <div className="flex justify-end gap-3">
+      <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
         <button
           type="button"
           onClick={() => window.history.back()}
           className="btn btn-outline"
           disabled={isSubmitting}
         >
+          <X size={18} />
           Cancel
         </button>
         <button
@@ -156,7 +177,17 @@ const ClientForm: React.FC<ClientFormProps> = ({
           className="btn btn-primary"
           disabled={isSubmitting}
         >
-          {isSubmitting ? 'Saving...' : initialData ? 'Update Client' : 'Add Client'}
+          {isSubmitting ? (
+            <>
+              <div className="spinner" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <Save size={18} />
+              {initialData ? 'Update Client' : 'Add Client'}
+            </>
+          )}
         </button>
       </div>
     </form>

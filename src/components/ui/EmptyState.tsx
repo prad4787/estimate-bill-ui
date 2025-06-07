@@ -14,15 +14,19 @@ const EmptyState: React.FC<EmptyStateProps> = ({
   action 
 }) => {
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-      {icon && (
-        <div className="mb-4 text-gray-400">
-          {icon}
+    <div className="card">
+      <div className="card-body">
+        <div className="empty-state">
+          {icon && (
+            <div className="empty-state-icon">
+              {icon}
+            </div>
+          )}
+          <h3 className="text-2xl font-semibold text-gray-900 mb-3">{title}</h3>
+          <p className="text-gray-600 mb-8 max-w-md leading-relaxed">{description}</p>
+          {action}
         </div>
-      )}
-      <h3 className="text-xl font-medium text-gray-900 mb-2">{title}</h3>
-      <p className="text-gray-500 mb-6 max-w-md">{description}</p>
-      {action}
+      </div>
     </div>
   );
 };

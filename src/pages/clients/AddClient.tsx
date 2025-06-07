@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, UserPlus } from 'lucide-react';
 import { useClientStore } from '../../store/clientStore';
 import { ClientFormData } from '../../types';
 import ClientForm from '../../components/clients/ClientForm';
@@ -33,23 +33,39 @@ const AddClient: React.FC = () => {
   };
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-fade-in">
       <div>
         <button 
           onClick={() => navigate('/clients')}
-          className="inline-flex items-center text-gray-500 hover:text-gray-700 mb-4"
+          className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6 transition-colors duration-200"
         >
-          <ArrowLeft size={16} className="mr-1" />
+          <ArrowLeft size={18} className="mr-2" />
           Back to Clients
         </button>
-        <h1>Add New Client</h1>
+        <div className="page-header">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl shadow-lg">
+              <UserPlus size={24} />
+            </div>
+            <div>
+              <h1 className="page-title">Add New Client</h1>
+              <p className="text-gray-600 mt-2">Create a new client profile to start managing estimates and billing.</p>
+            </div>
+          </div>
+        </div>
       </div>
       
-      <div className="card p-6">
-        <ClientForm
-          onSubmit={handleSubmit}
-          isSubmitting={isSubmitting}
-        />
+      <div className="card">
+        <div className="card-header">
+          <h2 className="text-xl font-semibold text-gray-900">Client Information</h2>
+          <p className="text-gray-600 mt-1">Fill in the details below to add a new client to your system.</p>
+        </div>
+        <div className="card-body">
+          <ClientForm
+            onSubmit={handleSubmit}
+            isSubmitting={isSubmitting}
+          />
+        </div>
       </div>
     </div>
   );
