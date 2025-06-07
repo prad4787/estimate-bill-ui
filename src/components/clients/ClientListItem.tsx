@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Edit2, Trash2, MapPin, FileText } from 'lucide-react';
+import { Edit2, Trash2, MapPin, FileText, Eye } from 'lucide-react';
 import { Client } from '../../types';
 
 interface ClientListItemProps {
@@ -32,23 +32,23 @@ const ClientListItem: React.FC<ClientListItemProps> = ({ client, onDelete }) => 
   };
 
   return (
-    <div className="hover:bg-gray-50 p-4">
+    <div className="table-row p-6">
       <div className="flex items-center justify-between">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-4">
             <div>
-              <h3 className="text-lg font-medium text-gray-900">
+              <h3 className="text-lg font-semibold text-gray-900">
                 {client.name}
               </h3>
-              <div className="mt-1 flex flex-wrap gap-3">
+              <div className="mt-2 flex flex-wrap gap-4">
                 {client.panVat && (
-                  <div className="flex items-center text-sm text-gray-500">
+                  <div className="flex items-center text-sm text-gray-600">
                     <FileText size={14} className="mr-1" />
                     <span>{client.panVat}</span>
                   </div>
                 )}
                 {client.address && (
-                  <div className="flex items-center text-sm text-gray-500">
+                  <div className="flex items-center text-sm text-gray-600">
                     <MapPin size={14} className="mr-1" />
                     <span>{client.address}</span>
                   </div>
@@ -60,25 +60,32 @@ const ClientListItem: React.FC<ClientListItemProps> = ({ client, onDelete }) => 
         
         <div className="flex items-center gap-6">
           <div className="text-right">
-            <div className="text-lg font-medium">
+            <div className="text-xl font-bold text-gray-900">
               {formatCurrency(client.openingBalance)}
             </div>
-            <div className="text-xs text-gray-500">
+            <div className="text-sm text-gray-500">
               Opening Balance
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <Link
+              to={`/clients/view/${client.id}`}
+              className="action-btn action-btn-primary"
+              title="View client details"
+            >
+              <Eye size={16} />
+            </Link>
             <Link
               to={`/clients/edit/${client.id}`}
-              className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-white rounded-md transition-colors"
+              className="action-btn action-btn-primary"
               title="Edit client"
             >
               <Edit2 size={16} />
             </Link>
             <button
               onClick={handleDelete}
-              className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-white rounded-md transition-colors"
+              className="action-btn action-btn-danger"
               title="Delete client"
             >
               <Trash2 size={16} />
@@ -86,8 +93,8 @@ const ClientListItem: React.FC<ClientListItemProps> = ({ client, onDelete }) => 
           </div>
         </div>
       </div>
-      <div className="mt-2">
-        <span className="text-xs text-gray-500">
+      <div className="mt-3">
+        <span className="text-sm text-gray-500">
           Added on {formatDate(client.createdAt)}
         </span>
       </div>

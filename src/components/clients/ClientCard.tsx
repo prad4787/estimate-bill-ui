@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Edit2, Trash2, MapPin, FileText, Calendar } from 'lucide-react';
+import { Edit2, Trash2, MapPin, FileText, Calendar, Eye } from 'lucide-react';
 import { Client } from '../../types';
 
 interface ClientCardProps {
@@ -80,6 +80,13 @@ const ClientCard: React.FC<ClientCardProps> = ({ client, onDelete }) => {
           </span>
         </div>
         <div className="flex space-x-1">
+          <Link
+            to={`/clients/view/${client.id}`}
+            className="action-btn action-btn-primary"
+            title="View client details"
+          >
+            <Eye size={16} />
+          </Link>
           <Link
             to={`/clients/edit/${client.id}`}
             className="action-btn action-btn-primary"

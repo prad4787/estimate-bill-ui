@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import ClientList from './pages/clients/ClientList';
 import AddClient from './pages/clients/AddClient';
 import EditClient from './pages/clients/EditClient';
+import ViewClient from './pages/clients/ViewClient';
 import EstimateList from './pages/estimates/EstimateList';
 import AddEstimate from './pages/estimates/AddEstimate';
 import ViewEstimate from './pages/estimates/ViewEstimate';
@@ -22,6 +23,7 @@ function App() {
           <Route index element={<ClientList />} />
           <Route path="add" element={<AddClient />} />
           <Route path="edit/:id" element={<EditClient />} />
+          <Route path="view/:id" element={<ViewClient />} />
         </Route>
         <Route path="estimates">
           <Route index element={<EstimateList />} />
