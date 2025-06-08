@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { X, Home, Users, FileText, CreditCard, Receipt, Settings, TrendingUp } from 'lucide-react';
+import { X, Home, Users, FileText, CreditCard, Receipt, Settings, TrendingUp, Building2 } from 'lucide-react';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -89,13 +89,25 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, closeSidebar }) => {
               <CreditCard size={20} />
               <span>Payment Methods</span>
             </NavLink>
-            
+
+            <div className="px-3 py-2">
+              <div className="border-t border-gray-200"></div>
+            </div>
+
             <NavLink 
               to="/settings" 
               className={({isActive}) => `sidebar-link ${isActive ? 'active' : ''}`}
             >
+              <Building2 size={20} />
+              <span>Organization</span>
+            </NavLink>
+            
+            <NavLink 
+              to="/settings/general" 
+              className={({isActive}) => `sidebar-link ${isActive ? 'active' : ''}`}
+            >
               <Settings size={20} />
-              <span>Settings</span>
+              <span>General Settings</span>
             </NavLink>
           </nav>
         </div>

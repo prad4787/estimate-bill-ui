@@ -37,6 +37,7 @@ function App() {
           <Route path="add" element={<AddReceipt />} />
         </Route>
         <Route path="settings" element={<OrganizationSettings />} />
+        <Route path="settings/general" element={<OrganizationSettings />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
