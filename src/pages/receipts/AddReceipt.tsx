@@ -395,20 +395,32 @@ const AddReceipt: React.FC = () => {
                       )}
                     </div>
                     
-                    <div className="flex items-center gap-4">
-                      <div className="flex-1 border-t border-gray-300"></div>
-                      <span className="text-sm text-gray-500 font-medium">OR</span>
-                      <div className="flex-1 border-t border-gray-300"></div>
+                    <div className="mt-6">
+                      <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                          <div className="w-full border-t border-gray-300" />
+                        </div>
+                        <div className="relative flex justify-center text-sm">
+                          <span className="px-4 bg-white text-gray-500 font-medium">Don't see your client?</span>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-6">
+                        <button
+                          type="button"
+                          onClick={() => setShowClientModal(true)}
+                          className="w-full flex items-center justify-center gap-3 px-6 py-4 border-2 border-dashed border-blue-300 rounded-xl text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 group"
+                        >
+                          <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors duration-200">
+                            <UserPlus size={20} />
+                          </div>
+                          <div className="text-left">
+                            <div className="font-semibold">Create New Client</div>
+                            <div className="text-sm text-blue-500">Add a new client to your database</div>
+                          </div>
+                        </button>
+                      </div>
                     </div>
-                    
-                    <button
-                      type="button"
-                      onClick={() => setShowClientModal(true)}
-                      className="btn btn-outline w-full"
-                    >
-                      <UserPlus size={18} />
-                      Create New Client
-                    </button>
                   </div>
                 )}
               </div>
