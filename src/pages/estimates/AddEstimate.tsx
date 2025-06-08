@@ -4,15 +4,18 @@ import { toast } from 'react-hot-toast';
 import { Plus, ArrowLeft } from 'lucide-react';
 import { useEstimateStore } from '../../store/estimateStore';
 import { useClientStore } from '../../store/clientStore';
+import { useStockStore } from '../../store/stockStore';
 import { EstimateFormData, EstimateItem, Client } from '../../types';
 import SuccessModal from '../../components/estimates/SuccessModal';
 import ClientModal from '../../components/clients/ClientModal';
 import ClientSelect from '../../components/clients/ClientSelect';
+import SearchableSelect, { SelectOption } from '../../components/ui/SearchableSelect';
 
 const AddEstimate: React.FC = () => {
   const navigate = useNavigate();
   const { addEstimate } = useEstimateStore();
   const { clients, fetchClients } = useClientStore();
+  const { stocks, fetchStocks, addStock } = useStockStore();
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [items, setItems] = useState<EstimateItem[]>([
@@ -34,7 +37,8 @@ const AddEstimate: React.FC = () => {
 
   React.useEffect(() => {
     fetchClients();
-  }, [fetchClients]);
+    fetchStocks();
+  }, [fetchClients, fetchStocks]);
 
 
   const handleClientCreated = (newClient: Client) => {
@@ -43,16 +47,71 @@ const AddEstimate: React.FC = () => {
     fetchClients(); // Refresh the clients list
   };
 
+  // Convert stocks to SelectOption format
+  const stockOptions: SelectOption[] = stocks.map(stock => ({
+    id: stock.id,
+    name: stock.name,
+    quantity: stock.quantity,
+    createdAt: stock.createdAt
+  }));
+
+  // Handle creating new stock item
+  const handleCreateStock = async (name: string): Promise<SelectOption> => {
+    const stockId = addStock({
+      name,
+      quantity: null // New items are untracked by default
+    });
+    
+    const newStock = {
+      id: stockId,
+      name,
+      quantity: null,
+      createdAt: new Date().toISOString()
+    };
+    
+    return newStock;
+  };
+
+  // Render stock option with quantity info
+  const renderStockOption = (option: SelectOption) => (
+    <div className="flex items-center justify-between">
+      <div className="flex-1">
+        <div className="font-medium text-gray-900">{option.name}</div>
+        <div className="text-xs text-gray-500 mt-1">
+          {option.quantity !== null ? `Stock: ${option.quantity}` : 'Quantity not tracked'}
+        </div>
+      </div>
+      {option.quantity !== null && option.quantity < 10 && (
+        <div className="ml-2">
+          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+            option.quantity === 0 ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
+          }`}>
+            {option.quantity === 0 ? 'Out of Stock' : 'Low Stock'}
+          </span>
+        </div>
+      )}
+    </div>
+  );
   const calculateItemTotal = (quantity: number, rate: number) => {
     return quantity * rate;
   };
 
-  const handleItemChange = (index: number, field: keyof EstimateItem, value: string | number) => {
+  const handleItemChange = (index: number, field: keyof EstimateItem | 'stockOption', value: string | number | SelectOption | null) => {
     const newItems = [...items];
-    newItems[index] = {
-      ...newItems[index],
-      [field]: value
-    };
+    
+    if (field === 'stockOption') {
+      // Handle stock selection
+      const stockOption = value as SelectOption | null;
+      newItems[index] = {
+        ...newItems[index],
+        item: stockOption ? stockOption.name : ''
+      };
+    } else {
+      newItems[index] = {
+        ...newItems[index],
+        [field]: value
+      };
+    }
 
     if (field === 'quantity' || field === 'rate') {
       newItems[index].total = calculateItemTotal(
@@ -227,14 +286,18 @@ const AddEstimate: React.FC = () => {
                         <td className="px-4 py-3">
                           <div className="relative">
                             <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                            <input
                               type="number"
                               className="form-input pl-8"
-                              value={item.rate}
-                              onChange={(e) => handleItemChange(index, 'rate', Number(e.target.value))}
-                              min="0"
-                              step="0.01"
-                              placeholder="0.00"
+                            <SearchableSelect
+                              options={stockOptions}
+                              value={selectedStockOption}
+                              onChange={(option) => handleItemChange(index, 'stockOption', option)}
+                              onCreateNew={handleCreateStock}
+                              placeholder="Select or create item..."
+                              searchPlaceholder="Search items or type to create..."
+                              createLabel="Create item"
+                              renderOption={renderStockOption}
+                              className="min-w-[250px]"
                             />
                           </div>
                         </td>
