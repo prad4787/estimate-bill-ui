@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Printer, Download, Save, Plus, Trash2, UserPlus } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, UserPlus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useReceiptStore } from '../../store/receiptStore';
 import { useClientStore } from '../../store/clientStore';
-import { useOrganizationStore } from '../../store/organizationStore';
 import { Transaction, Client, PaymentType, PaymentMedium } from '../../types';
 import ClientModal from '../../components/clients/ClientModal';
 
@@ -13,7 +12,6 @@ const EditReceipt: React.FC = () => {
   const navigate = useNavigate();
   const { receipts, updateReceipt } = useReceiptStore();
   const { clients, fetchClients } = useClientStore();
-  const { organization, fetchOrganization } = useOrganizationStore();
   
   const [receipt, setReceipt] = useState<any>(null);
   const [date, setDate] = useState('');
@@ -27,7 +25,6 @@ const EditReceipt: React.FC = () => {
 
   useEffect(() => {
     fetchClients();
-    fetchOrganization();
     
     // Load saved payment methods from localStorage
     const methods = localStorage.getItem('billmanager-payment-methods');
@@ -50,7 +47,7 @@ const EditReceipt: React.FC = () => {
         })));
       }
     }
-  }, [id, receipts, fetchClients, fetchOrganization]);
+  }, [id, receipts, fetchClients]);
 
   const filteredClients = clients.filter(client =>
     client.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -311,335 +308,6 @@ const EditReceipt: React.FC = () => {
     }
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
-  const handleDownloadPDF = () => {
-    // Create a new window with the receipt content for PDF generation
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      const receiptContent = generateReceiptHTML();
-      printWindow.document.write(receiptContent);
-      printWindow.document.close();
-      printWindow.focus();
-      
-      // Trigger print dialog which can be used to save as PDF
-      setTimeout(() => {
-        printWindow.print();
-      }, 500);
-    }
-  };
-
-  const generateReceiptHTML = () => {
-    if (!receipt || !selectedClient) return '';
-
-    const client = clients.find(c => c.id === selectedClient);
-    if (!client) return '';
-
-    const formatDate = (dateString: string) => {
-      return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    };
-
-    const formatCurrency = (amount: number) => {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-      }).format(amount);
-    };
-
-    const formatPaymentType = (type: string) => {
-      switch (type) {
-        case 'cash': return 'CASH';
-        case 'bank': return 'BANK TRANSFER';
-        case 'wallet': return 'E-WALLET';
-        case 'cheque': return 'CHEQUE';
-        default: return type.toUpperCase();
-      }
-    };
-
-    const getPaymentDetails = (transaction: any) => {
-      if (transaction.paymentType === 'cash') {
-        return 'Cash Payment';
-      }
-      
-      if (transaction.paymentType === 'cheque' && transaction.chequeDetails) {
-        return `Cheque: ${transaction.chequeDetails.chequeNumber}<br>Bank: ${transaction.chequeDetails.bankName}<br>Name: ${transaction.chequeDetails.chequeName}`;
-      }
-      
-      if (transaction.paymentMedium) {
-        if (transaction.paymentMedium.type === 'bank') {
-          return `${transaction.paymentMedium.bankName}<br>Account: ${transaction.paymentMedium.accountName}<br>Number: ${transaction.paymentMedium.accountNumber}`;
-        }
-        if (transaction.paymentMedium.type === 'wallet') {
-          return `${transaction.paymentMedium.walletName}<br>Account: ${transaction.paymentMedium.accountName}<br>Number: ${transaction.paymentMedium.accountNumber}`;
-        }
-      }
-      
-      return formatPaymentType(transaction.paymentType);
-    };
-
-    const total = transactions.reduce((sum, t) => sum + t.amount, 0);
-
-    return `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Receipt - ${receipt.id}</title>
-    <style>
-        @media print {
-            @page {
-                size: A4;
-                margin: 20mm;
-            }
-            body {
-                margin: 0;
-                padding: 0;
-            }
-            .no-print {
-                display: none !important;
-            }
-        }
-        
-        body {
-            font-family: 'Arial', sans-serif;
-            font-size: 14px;
-            line-height: 1.6;
-            color: #333;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background: white;
-        }
-        
-        .receipt-container {
-            border: 2px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 30px;
-            background: white;
-        }
-        
-        .header {
-            text-align: center;
-            border-bottom: 2px solid #e5e7eb;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .company-logo {
-            max-height: 80px;
-            max-width: 200px;
-            margin-bottom: 15px;
-        }
-        
-        .company-name {
-            font-size: 28px;
-            font-weight: bold;
-            color: #1f2937;
-            margin-bottom: 8px;
-        }
-        
-        .company-details {
-            font-size: 12px;
-            color: #6b7280;
-            line-height: 1.4;
-        }
-        
-        .receipt-title {
-            font-size: 24px;
-            font-weight: bold;
-            color: #2563eb;
-            margin: 20px 0 10px 0;
-        }
-        
-        .receipt-info {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 30px;
-            gap: 40px;
-        }
-        
-        .info-section {
-            flex: 1;
-        }
-        
-        .info-title {
-            font-size: 16px;
-            font-weight: bold;
-            color: #1f2937;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #e5e7eb;
-            padding-bottom: 5px;
-        }
-        
-        .info-content {
-            font-size: 14px;
-            color: #374151;
-        }
-        
-        .info-line {
-            margin-bottom: 5px;
-        }
-        
-        .transactions-section {
-            margin: 30px 0;
-        }
-        
-        .section-title {
-            font-size: 18px;
-            font-weight: bold;
-            color: #1f2937;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #e5e7eb;
-            padding-bottom: 8px;
-        }
-        
-        .transaction {
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 15px;
-            background: #f9fafb;
-        }
-        
-        .transaction-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        
-        .transaction-amount {
-            font-size: 20px;
-            font-weight: bold;
-            color: #059669;
-        }
-        
-        .transaction-type {
-            background: #dbeafe;
-            color: #1e40af;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        
-        .transaction-details {
-            font-size: 13px;
-            color: #6b7280;
-            line-height: 1.5;
-        }
-        
-        .total-section {
-            border-top: 2px solid #e5e7eb;
-            padding-top: 20px;
-            margin-top: 30px;
-            text-align: right;
-        }
-        
-        .total-amount {
-            font-size: 28px;
-            font-weight: bold;
-            color: #059669;
-        }
-        
-        .total-label {
-            font-size: 18px;
-            color: #374151;
-            margin-bottom: 10px;
-        }
-        
-        .footer {
-            text-align: center;
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid #e5e7eb;
-            font-size: 12px;
-            color: #6b7280;
-        }
-        
-        .thank-you {
-            font-size: 16px;
-            font-weight: 600;
-            color: #1f2937;
-            margin-bottom: 10px;
-        }
-    </style>
-</head>
-<body>
-    <div class="receipt-container">
-        <div class="header">
-            ${organization.logo ? `<img src="${organization.logo}" alt="${organization.name}" class="company-logo">` : ''}
-            <div class="company-name">${organization.name}</div>
-            <div class="company-details">
-                ${organization.address}<br>
-                ${organization.phones.length > 0 ? `Phone: ${organization.phones[0]}` : ''} 
-                ${organization.emails.length > 0 ? `| Email: ${organization.emails[0]}` : ''}<br>
-                ${organization.website ? `Website: ${organization.website}` : ''}
-            </div>
-            <div class="receipt-title">PAYMENT RECEIPT</div>
-        </div>
-        
-        <div class="receipt-info">
-            <div class="info-section">
-                <div class="info-title">Receipt Information</div>
-                <div class="info-content">
-                    <div class="info-line"><strong>Receipt ID:</strong> ${receipt.id}</div>
-                    <div class="info-line"><strong>Date:</strong> ${formatDate(date)}</div>
-                    <div class="info-line"><strong>Issued:</strong> ${formatDate(new Date().toISOString())}</div>
-                </div>
-            </div>
-            
-            <div class="info-section">
-                <div class="info-title">Received From</div>
-                <div class="info-content">
-                    <div class="info-line"><strong>${client.name}</strong></div>
-                    ${client.address ? `<div class="info-line">${client.address}</div>` : ''}
-                    ${client.panVat ? `<div class="info-line">PAN/VAT: ${client.panVat}</div>` : ''}
-                </div>
-            </div>
-        </div>
-        
-        <div class="transactions-section">
-            <div class="section-title">Payment Details</div>
-            ${transactions.map((transaction, index) => `
-                <div class="transaction">
-                    <div class="transaction-header">
-                        <div>
-                            <div style="font-weight: 600; color: #1f2937;">Payment ${index + 1}</div>
-                            <div class="transaction-type">${formatPaymentType(transaction.paymentType)}</div>
-                        </div>
-                        <div class="transaction-amount">${formatCurrency(transaction.amount)}</div>
-                    </div>
-                    <div class="transaction-details">
-                        ${getPaymentDetails(transaction)}
-                    </div>
-                </div>
-            `).join('')}
-        </div>
-        
-        <div class="total-section">
-            <div class="total-label">Total Amount Received:</div>
-            <div class="total-amount">${formatCurrency(total)}</div>
-        </div>
-        
-        <div class="footer">
-            <div class="thank-you">Thank you for your payment!</div>
-            <div>This is a computer-generated receipt and does not require a signature.</div>
-            ${organization.website ? `<div style="margin-top: 10px;">${organization.website}</div>` : ''}
-        </div>
-    </div>
-</body>
-</html>`;
-  };
-
   const getTotalAmount = () => {
     return transactions.reduce((sum, t) => sum + t.amount, 0);
   };
@@ -663,7 +331,7 @@ const EditReceipt: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      <div className="no-print">
+      <div>
         <button 
           onClick={() => navigate('/receipts')}
           className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6 transition-colors duration-200"
@@ -676,27 +344,11 @@ const EditReceipt: React.FC = () => {
             <h1 className="page-title">Edit Receipt</h1>
             <p className="text-gray-600 mt-2">Update payment transaction details.</p>
           </div>
-          <div className="flex gap-3">
-            <button
-              onClick={handlePrint}
-              className="btn btn-outline"
-            >
-              <Printer size={18} />
-              Print
-            </button>
-            <button
-              onClick={handleDownloadPDF}
-              className="btn btn-outline"
-            >
-              <Download size={18} />
-              Download PDF
-            </button>
-          </div>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
-        <div className="card no-print">
+        <div className="card">
           <div className="card-header">
             <h2 className="text-xl font-semibold text-gray-900">Receipt Information</h2>
           </div>
@@ -797,7 +449,7 @@ const EditReceipt: React.FC = () => {
           </div>
         </div>
 
-        <div className="card no-print">
+        <div className="card">
           <div className="card-header">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold text-gray-900">Transactions</h2>
@@ -873,7 +525,7 @@ const EditReceipt: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex justify-end gap-4 no-print">
+        <div className="flex justify-end gap-4">
           <button
             type="button"
             onClick={() => navigate('/receipts')}
@@ -906,26 +558,6 @@ const EditReceipt: React.FC = () => {
         onClose={() => setShowClientModal(false)}
         onClientCreated={handleClientCreated}
       />
-
-      {/* Print-only Receipt Display */}
-      <div className="print-only" style={{ display: 'none' }}>
-        <div dangerouslySetInnerHTML={{ __html: generateReceiptHTML() }} />
-      </div>
-
-      <style jsx>{`
-        @media print {
-          .no-print {
-            display: none !important;
-          }
-          .print-only {
-            display: block !important;
-          }
-          body {
-            margin: 0;
-            padding: 0;
-          }
-        }
-      `}</style>
     </div>
   );
 };
