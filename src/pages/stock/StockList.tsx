@@ -169,7 +169,7 @@ const StockList: React.FC = () => {
           description="Add your first stock item to get started with inventory management."
           icon={<Package size={64} />}
           action={
-            <Link to="/stock/add" className="btn btn-primary">
+            <Link to="/stock/add\" className="btn btn-primary">
               <Plus size={18} />
               Add Stock
             </Link>
