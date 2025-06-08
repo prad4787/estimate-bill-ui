@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Receipt, Search, Printer, Edit2, Eye } from 'lucide-react';
+import { Plus, Receipt, Search, Printer, Edit2, Eye, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useReceiptStore } from '../../store/receiptStore';
 import { useClientStore } from '../../store/clientStore';
@@ -347,7 +347,7 @@ const ReceiptList: React.FC = () => {
           description="Create your first receipt to get started with payment tracking."
           icon={<Receipt size={64} />}
           action={
-            <Link to="/receipts/add\" className="btn btn-primary">
+            <Link to="/receipts/add" className="btn btn-primary">
               <Plus size={18} />
               Create Receipt
             </Link>
@@ -434,7 +434,7 @@ const ReceiptList: React.FC = () => {
                           className="action-btn action-btn-danger"
                           title="Delete receipt"
                         >
-                          Delete
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     </td>
