@@ -301,7 +301,7 @@ const AddReceipt: React.FC = () => {
       <div>
         <button 
           onClick={() => navigate('/receipts')}
-          className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6 transition-colors duration-200"
+          className="inline-flex items-center text-gray-600 mb-6"
         >
           <ArrowLeft size={18} className="mr-2" />
           Back to Receipts

@@ -32,11 +32,11 @@ const ClientCard: React.FC<ClientCardProps> = ({ client, onDelete }) => {
   };
 
   return (
-    <div className="card group animate-fade-in">
+    <div className="card animate-fade-in">
       <div className="card-body">
         <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
-            <h3 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors duration-200">
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
               {client.name}
             </h3>
             

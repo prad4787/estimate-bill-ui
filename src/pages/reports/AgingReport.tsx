@@ -313,7 +313,7 @@ const AgingReport: React.FC = () => {
               {filteredClientData.map((client, index) => (
                 <tr 
                   key={client.clientId} 
-                  className={`table-row animate-slide-in ${
+                  className={`animate-slide-in ${
                     client.overTwelve > 0 ? 'bg-red-50' : 
                     client.threeToSix > 0 || client.sixToTwelve > 0 ? 'bg-yellow-50' : ''
                   }`}

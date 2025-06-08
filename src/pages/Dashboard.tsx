@@ -130,7 +130,7 @@ const Dashboard: React.FC = () => {
             ) : (
               <div className="divide-y divide-gray-100">
                 {clients.slice(0, 5).map((client, index) => (
-                  <div key={client.id} className="p-6 hover:bg-gray-50 transition-colors duration-200 animate-slide-in" style={{ animationDelay: `${index * 100}ms` }}>
+                  <div key={client.id} className="p-6 animate-slide-in" style={{ animationDelay: `${index * 100}ms` }}>
                     <div className="flex justify-between items-center">
                       <div>
                         <h3 className="font-semibold text-gray-900">{client.name}</h3>

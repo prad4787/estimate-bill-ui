@@ -32,7 +32,7 @@ const ClientListItem: React.FC<ClientListItemProps> = ({ client, onDelete }) => 
   };
 
   return (
-    <div className="table-row p-6">
+    <div className="p-6">
       <div className="flex items-center justify-between">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-4">

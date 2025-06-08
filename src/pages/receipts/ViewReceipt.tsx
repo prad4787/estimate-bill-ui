@@ -649,7 +649,7 @@ const ViewReceipt: React.FC = () => {
       <div className="flex justify-between items-center no-print">
         <button 
           onClick={() => navigate('/receipts')}
-          className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors duration-200"
+          className="inline-flex items-center text-gray-600"
         >
           <ArrowLeft size={18} className="mr-2" />
           Back to Receipts

@@ -199,13 +199,13 @@ const PaymentMethodList: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {paymentMethods.map((method, index) => (
-            <div key={index} className="card group hover:shadow-xl transition-all duration-300">
+            <div key={index} className="card">
               <div className="card-body">
                 <div className="flex items-start justify-between mb-4">
                   <div className={`stats-icon bg-gradient-to-br ${getMethodColor(method.type)} text-white`}>
                     {getMethodIcon(method.type)}
                   </div>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <div className="flex gap-1">
                     {canEdit(method) && (
                       <button
                         onClick={() => handleEdit(method)}

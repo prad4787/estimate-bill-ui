@@ -421,7 +421,7 @@ const ReceiptList: React.FC = () => {
                 {paginatedReceipts.map((receipt, index) => (
                   <tr 
                     key={receipt.id} 
-                    className="table-row animate-slide-in"
+                    className="animate-slide-in"
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
                     <td className="px-6 py-4 text-sm text-gray-900 font-medium">

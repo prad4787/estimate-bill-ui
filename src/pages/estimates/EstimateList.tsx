@@ -123,7 +123,7 @@ const EstimateList: React.FC = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {paginatedEstimates.map((estimate) => (
-                  <tr key={estimate.id} className="hover:bg-gray-50">
+                  <tr key={estimate.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {estimate.number}
                     </td>
