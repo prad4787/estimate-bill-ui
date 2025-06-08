@@ -397,31 +397,81 @@ const EditReceipt: React.FC = () => {
                         value={searchTerm}
                         onChange={(e) => {
                           setSearchTerm(e.target.value);
-                          setShowClientSearch(true);
+                          setShowClientSearch(e.target.value.length > 0);
+                        }}
+                        onFocus={() => {
+                          if (searchTerm.length === 0) {
+                            setShowClientSearch(true);
+                          }
+                        }}
+                        onBlur={() => {
+                          // Delay hiding to allow clicking on dropdown items
+                          setTimeout(() => setShowClientSearch(false), 200);
                         }}
                       />
-                      {showClientSearch && searchTerm && (
+                      {showClientSearch && (
                         <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                          {filteredClients.length > 0 ? (
-                            filteredClients.map(client => (
-                              <div
-                                key={client.id}
-                                className="p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-                                onClick={() => {
-                                  setSelectedClient(client.id);
-                                  setShowClientSearch(false);
-                                  setSearchTerm('');
-                                }}
-                              >
-                                <div className="font-medium text-gray-900">{client.name}</div>
-                                {client.address && (
-                                  <div className="text-sm text-gray-500">{client.address}</div>
+                          {searchTerm.length === 0 ? (
+                            // Show all clients when no search term
+                            clients.length > 0 ? (
+                              <>
+                                <div className="px-4 py-2 text-xs font-medium text-gray-500 bg-gray-50 border-b border-gray-100">
+                                  All Clients ({clients.length})
+                                </div>
+                                {clients.slice(0, 10).map(client => (
+                                  <div
+                                    key={client.id}
+                                    className="p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                                    onClick={() => {
+                                      setSelectedClient(client.id);
+                                      setShowClientSearch(false);
+                                      setSearchTerm('');
+                                    }}
+                                  >
+                                    <div className="font-medium text-gray-900">{client.name}</div>
+                                    {client.address && (
+                                      <div className="text-sm text-gray-500">{client.address}</div>
+                                    )}
+                                  </div>
+                                ))}
+                                {clients.length > 10 && (
+                                  <div className="px-4 py-2 text-xs text-gray-500 bg-gray-50 text-center">
+                                    Type to search through all {clients.length} clients
+                                  </div>
                                 )}
+                              </>
+                            ) : (
+                              <div className="p-4 text-gray-500 text-center">
+                                No clients found. Create your first client below.
                               </div>
-                            ))
+                            )
+                          ) : filteredClients.length > 0 ? (
+                            // Show filtered results when searching
+                            <>
+                              <div className="px-4 py-2 text-xs font-medium text-gray-500 bg-gray-50 border-b border-gray-100">
+                                Search Results ({filteredClients.length})
+                              </div>
+                              {filteredClients.map(client => (
+                                <div
+                                  key={client.id}
+                                  className="p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                                  onClick={() => {
+                                    setSelectedClient(client.id);
+                                    setShowClientSearch(false);
+                                    setSearchTerm('');
+                                  }}
+                                >
+                                  <div className="font-medium text-gray-900">{client.name}</div>
+                                  {client.address && (
+                                    <div className="text-sm text-gray-500">{client.address}</div>
+                                  )}
+                                </div>
+                              ))}
+                            </>
                           ) : (
+                            // No search results
                             <div className="p-4 text-gray-500 text-center">
-                              No clients found
+                              No clients match "{searchTerm}"
                             </div>
                           )}
                         </div>
