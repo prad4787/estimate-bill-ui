@@ -18,7 +18,7 @@ export default function ClientSelect({
 }: ClientSelectProps) {
 
     const [searchTerm, setSearchTerm] = useState('');
-    const [showClientSearch, setShowClientSearch] = useState(false);
+    const [showClientSearch, setShowClientSearch] = useState(true);
     const [showClientModal, setShowClientModal] = useState(false);
 
     const filteredClients = clients.filter(client =>
@@ -75,7 +75,7 @@ export default function ClientSelect({
                                 }}
                             />
                             {showClientSearch && (
-                                <div className="fixed  z-[9999] w-auto mt-[54px] bg-white border border-gray-300 border-solid rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                                <div className="absolute z-50 top-full left-0 w-full mt-2 bg-white border border-gray-300 border-solid rounded-xl shadow-lg max-h-60 overflow-y-auto">
                                     {searchTerm.length === 0 ? (
                                         // Show all clients when no search term
                                         clients.length > 0 ? (

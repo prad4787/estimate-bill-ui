@@ -341,12 +341,11 @@ const AddReceipt: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
+       
 
-        <div className="card">
           <div className="card-header">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-gray-900">Transactions</h2>
+              <h5 className="text-xl font-semibold text-gray-900">Transactions</h5>
               <div className="text-xl font-bold text-green-600">
                 Total: ${getTotalAmount().toFixed(2)}
               </div>

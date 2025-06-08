@@ -13,6 +13,7 @@ const AddEstimate: React.FC = () => {
   const navigate = useNavigate();
   const { addEstimate } = useEstimateStore();
   const { clients, fetchClients } = useClientStore();
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [items, setItems] = useState<EstimateItem[]>([
     {
@@ -161,16 +162,29 @@ const AddEstimate: React.FC = () => {
             <h2 className="text-xl font-semibold text-gray-900">Client Information</h2>
           </div>
           <div className="card-body">
-            <ClientSelect
-              clients={clients}
-              onClientCreated={handleClientCreated}
-              selectedClient={selectedClient}
-              setSelectedClient={setSelectedClient}
-            />
-          </div>
-        </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="form-label">Date</label>
+                <input
+                  type="date"
+                  className="form-input"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  required
+                />
+              </div>
 
-        <div className="card">
+              <div className="relative">
+                <ClientSelect
+                  clients={clients}
+                  selectedClient={selectedClient}
+                  setSelectedClient={setSelectedClient}
+                  onClientCreated={handleClientCreated}
+                />
+              </div>
+            </div>
+          </div>
+
           <div className="card-header">
             <h2 className="text-xl font-semibold text-gray-900">Items & Services</h2>
           </div>
