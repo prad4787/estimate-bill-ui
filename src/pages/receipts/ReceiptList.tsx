@@ -55,25 +55,22 @@ const ReceiptList: React.FC = () => {
   const generateThermalReceipt = (receipt: any, client: any, org: any) => {
     const formatDate = (dateString: string) => {
       return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: '2-digit',
         day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
       });
     };
 
     const formatCurrency = (amount: number) => {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-      }).format(amount);
+      return `$${amount.toFixed(2)}`;
     };
 
     const formatPaymentType = (type: string) => {
       switch (type) {
         case 'cash': return 'CASH';
-        case 'bank': return 'BANK';
+        case 'bank': return 'BANK TRANSFER';
         case 'wallet': return 'E-WALLET';
         case 'cheque': return 'CHEQUE';
         default: return type.toUpperCase();
@@ -82,23 +79,23 @@ const ReceiptList: React.FC = () => {
 
     const getPaymentDetails = (transaction: any) => {
       if (transaction.paymentType === 'cash') {
-        return 'Cash Payment';
+        return '';
       }
       
       if (transaction.paymentType === 'cheque' && transaction.chequeDetails) {
-        return `Cheque: ${transaction.chequeDetails.chequeNumber}\nBank: ${transaction.chequeDetails.bankName}`;
+        return `Cheque No: ${transaction.chequeDetails.chequeNumber}`;
       }
       
       if (transaction.paymentMedium) {
         if (transaction.paymentMedium.type === 'bank') {
-          return `${transaction.paymentMedium.bankName}\nAcc: ${transaction.paymentMedium.accountNumber}`;
+          return `${transaction.paymentMedium.bankName}`;
         }
         if (transaction.paymentMedium.type === 'wallet') {
-          return `${transaction.paymentMedium.walletName}\nAcc: ${transaction.paymentMedium.accountNumber}`;
+          return `${transaction.paymentMedium.walletName}`;
         }
       }
       
-      return formatPaymentType(transaction.paymentType);
+      return '';
     };
 
     return `
@@ -106,11 +103,11 @@ const ReceiptList: React.FC = () => {
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Receipt - ${receipt.id}</title>
+    <title>Receipt ${receipt.id}</title>
     <style>
         @media print {
             @page {
-                size: 80mm auto;
+                size: 58mm auto;
                 margin: 0;
             }
             body {
@@ -120,85 +117,114 @@ const ReceiptList: React.FC = () => {
         }
         
         body {
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            line-height: 1.2;
-            width: 80mm;
+            font-family: 'Courier New', 'Consolas', monospace;
+            font-size: 11px;
+            line-height: 1.1;
+            width: 58mm;
             margin: 0 auto;
-            padding: 5mm;
+            padding: 2mm;
             background: white;
             color: black;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
         }
         
         .header {
             text-align: center;
-            border-bottom: 1px dashed #000;
-            padding-bottom: 5px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         
         .company-name {
-            font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 2px;
-        }
-        
-        .receipt-title {
             font-size: 14px;
             font-weight: bold;
-            margin: 5px 0;
+            margin-bottom: 1px;
+            text-transform: uppercase;
         }
         
-        .receipt-info {
-            margin-bottom: 10px;
-            font-size: 11px;
+        .company-address {
+            font-size: 9px;
+            margin-bottom: 1px;
+            line-height: 1.0;
         }
         
-        .client-info {
-            margin-bottom: 10px;
-            border-bottom: 1px dashed #000;
-            padding-bottom: 5px;
-        }
-        
-        .transaction {
-            margin-bottom: 8px;
-            border-bottom: 1px dotted #ccc;
-            padding-bottom: 5px;
-        }
-        
-        .transaction:last-child {
-            border-bottom: none;
-        }
-        
-        .amount {
+        .bill-title {
+            font-size: 12px;
             font-weight: bold;
-            font-size: 13px;
-        }
-        
-        .total-section {
-            border-top: 1px dashed #000;
-            padding-top: 5px;
-            margin-top: 10px;
-            text-align: right;
-        }
-        
-        .total-amount {
-            font-size: 16px;
-            font-weight: bold;
-        }
-        
-        .footer {
+            margin: 8px 0 6px 0;
             text-align: center;
-            margin-top: 15px;
-            border-top: 1px dashed #000;
-            padding-top: 5px;
+        }
+        
+        .order-info {
+            margin-bottom: 6px;
             font-size: 10px;
         }
         
-        .line {
+        .separator {
+            border-bottom: 1px dashed #000;
+            margin: 4px 0;
+        }
+        
+        .item-line {
             display: flex;
             justify-content: space-between;
             margin: 2px 0;
+            font-size: 10px;
+        }
+        
+        .item-name {
+            flex: 1;
+            margin-right: 8px;
+        }
+        
+        .item-price {
+            text-align: right;
+            min-width: 40px;
+        }
+        
+        .item-qty {
+            font-size: 9px;
+            margin-left: 4px;
+        }
+        
+        .total-section {
+            margin-top: 6px;
+            border-top: 1px dashed #000;
+            padding-top: 4px;
+        }
+        
+        .total-line {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 12px;
+            margin: 2px 0;
+        }
+        
+        .payment-section {
+            margin-top: 6px;
+            font-size: 10px;
+        }
+        
+        .payment-line {
+            display: flex;
+            justify-content: space-between;
+            margin: 1px 0;
+        }
+        
+        .footer {
+            text-align: right;
+        }
+        
+        .thank-you {
+            text-align: center;
+            margin: 6px 0;
+            font-size: 10px;
+        }
+        
+        .timestamp {
+            text-align: center;
+            margin-top: 4px;
+            font-size: 9px;
         }
         
         .center {
@@ -209,70 +235,85 @@ const ReceiptList: React.FC = () => {
             text-align: right;
         }
         
+        .bold {
+            font-weight: bold;
+        }
+        
         .small {
+            font-size: 9px;
+        }
+        
+        .currency {
+            text-align: center;
+            margin: 4px 0;
+            font-size: 9px;
+        }
+        
+        .dine-section {
+            text-align: center;
+            margin: 4px 0;
             font-size: 10px;
+        }
+        
+        .employee-info {
+            font-size: 9px;
+            margin: 2px 0;
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <div class="company-name">${org.name.toUpperCase()}</div>
-        <div class="small">${org.address}</div>
-        ${org.phones.length > 0 ? `<div class="small">Tel: ${org.phones[0]}</div>` : ''}
-        ${org.emails.length > 0 ? `<div class="small">Email: ${org.emails[0]}</div>` : ''}
-        <div class="receipt-title">PAYMENT RECEIPT</div>
+        <div class="company-name">${org.name}</div>
+        <div class="company-address">${org.address}</div>
     </div>
     
-    <div class="receipt-info">
-        <div class="line">
-            <span>Receipt ID:</span>
-            <span>${receipt.id.substring(0, 12)}...</span>
-        </div>
-        <div class="line">
-            <span>Date:</span>
-            <span>${formatDate(receipt.date)}</span>
-        </div>
-        <div class="line">
-            <span>Printed:</span>
-            <span>${formatDate(new Date().toISOString())}</span>
-        </div>
+    <div class="currency center">Receipt currency: US Dollars</div>
+    
+    <div class="bill-title">BILL</div>
+    
+    <div class="order-info">
+        <div>Order: ${receipt.id.substring(0, 8)} - ${formatDate(receipt.date).split(' ')[1]}</div>
+        <div>Employee: ${client.name}</div>
+        <div>POS: POS 1</div>
     </div>
     
-    <div class="client-info">
-        <div><strong>RECEIVED FROM:</strong></div>
+    <div class="separator"></div>
+    
+    <div class="dine-section">
+        <div>Dine in</div>
+    </div>
+    
+    <div class="separator"></div>
+    
+    <div class="center small">
         <div>${client.name}</div>
-        ${client.address ? `<div class="small">${client.address}</div>` : ''}
-        ${client.panVat ? `<div class="small">PAN/VAT: ${client.panVat}</div>` : ''}
     </div>
     
-    <div><strong>PAYMENT DETAILS:</strong></div>
+    <div class="separator"></div>
+    
     ${receipt.transactions.map((transaction: any, index: number) => `
-        <div class="transaction">
-            <div class="line">
-                <span>Payment ${index + 1}:</span>
-                <span class="amount">${formatCurrency(transaction.amount)}</span>
-            </div>
-            <div class="line">
-                <span>Method:</span>
-                <span>${formatPaymentType(transaction.paymentType)}</span>
-            </div>
-            ${getPaymentDetails(transaction) !== formatPaymentType(transaction.paymentType) ? 
-                `<div class="small" style="margin-top: 2px;">${getPaymentDetails(transaction).replace('\n', '<br>')}</div>` : ''}
+        <div class="item-line">
+            <span class="item-name">${formatPaymentType(transaction.paymentType)} Payment</span>
+            <span class="item-price">${formatCurrency(transaction.amount)}</span>
         </div>
+        <div class="item-qty">1 x ${formatCurrency(transaction.amount)}</div>
+        ${getPaymentDetails(transaction) ? `<div class="small">${getPaymentDetails(transaction)}</div>` : ''}
     `).join('')}
     
+    <div class="separator"></div>
+    
     <div class="total-section">
-        <div class="line">
-            <span>TOTAL RECEIVED:</span>
-            <span class="total-amount">${formatCurrency(receipt.total)}</span>
+        <div class="total-line">
+            <span class="bold">Amount due</span>
+            <span class="bold">${formatCurrency(receipt.total)}</span>
         </div>
     </div>
     
+    <div class="separator"></div>
+    
     <div class="footer">
-        <div>Thank you for your payment!</div>
-        <div class="small">This is a computer generated receipt</div>
-        <div class="small">No signature required</div>
-        ${org.website ? `<div class="small">${org.website}</div>` : ''}
+        <div class="thank-you center">We Love Coffee!!</div>
+        <div class="timestamp center">${formatDate(new Date().toISOString())}</div>
     </div>
 </body>
 </html>`;

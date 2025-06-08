@@ -111,7 +111,7 @@ const ViewReceipt: React.FC = () => {
     // Create a new window with the receipt content for PDF generation
     const printWindow = window.open('', '_blank');
     if (printWindow) {
-      const receiptContent = generateReceiptHTML();
+      const receiptContent = generateThermalReceiptHTML();
       printWindow.document.write(receiptContent);
       printWindow.document.close();
       printWindow.focus();
@@ -121,6 +121,255 @@ const ViewReceipt: React.FC = () => {
         printWindow.print();
       }, 500);
     }
+  };
+
+  const generateThermalReceiptHTML = () => {
+    const formatDateThermal = (dateString: string) => {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    };
+
+    const formatCurrencyThermal = (amount: number) => {
+      return `$${amount.toFixed(2)}`;
+    };
+
+    const formatPaymentTypeThermal = (type: string) => {
+      switch (type) {
+        case 'cash': return 'CASH';
+        case 'bank': return 'BANK TRANSFER';
+        case 'wallet': return 'E-WALLET';
+        case 'cheque': return 'CHEQUE';
+        default: return type.toUpperCase();
+      }
+    };
+
+    const getPaymentDetailsThermal = (transaction: any) => {
+      if (transaction.paymentType === 'cash') {
+        return '';
+      }
+      
+      if (transaction.paymentType === 'cheque' && transaction.chequeDetails) {
+        return `Cheque No: ${transaction.chequeDetails.chequeNumber}`;
+      }
+      
+      if (transaction.paymentMedium) {
+        if (transaction.paymentMedium.type === 'bank') {
+          return `${transaction.paymentMedium.bankName}`;
+        }
+        if (transaction.paymentMedium.type === 'wallet') {
+          return `${transaction.paymentMedium.walletName}`;
+        }
+      }
+      
+      return '';
+    };
+
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Receipt ${receipt.id}</title>
+    <style>
+        @media print {
+            @page {
+                size: 58mm auto;
+                margin: 0;
+            }
+            body {
+                margin: 0;
+                padding: 0;
+            }
+        }
+        
+        body {
+            font-family: 'Courier New', 'Consolas', monospace;
+            font-size: 11px;
+            line-height: 1.1;
+            width: 58mm;
+            margin: 0 auto;
+            padding: 2mm;
+            background: white;
+            color: black;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        
+        .company-name {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 1px;
+            text-transform: uppercase;
+        }
+        
+        .company-address {
+            font-size: 9px;
+            margin-bottom: 1px;
+            line-height: 1.0;
+        }
+        
+        .bill-title {
+            font-size: 12px;
+            font-weight: bold;
+            margin: 8px 0 6px 0;
+            text-align: center;
+        }
+        
+        .order-info {
+            margin-bottom: 6px;
+            font-size: 10px;
+        }
+        
+        .separator {
+            border-bottom: 1px dashed #000;
+            margin: 4px 0;
+        }
+        
+        .item-line {
+            display: flex;
+            justify-content: space-between;
+            margin: 2px 0;
+            font-size: 10px;
+        }
+        
+        .item-name {
+            flex: 1;
+            margin-right: 8px;
+        }
+        
+        .item-price {
+            text-align: right;
+            min-width: 40px;
+        }
+        
+        .item-qty {
+            font-size: 9px;
+            margin-left: 4px;
+        }
+        
+        .total-section {
+            margin-top: 6px;
+            border-top: 1px dashed #000;
+            padding-top: 4px;
+        }
+        
+        .total-line {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 12px;
+            margin: 2px 0;
+        }
+        
+        .footer {
+            text-align: right;
+            margin-top: 8px;
+            font-size: 9px;
+        }
+        
+        .thank-you {
+            text-align: center;
+            margin: 6px 0;
+            font-size: 10px;
+        }
+        
+        .timestamp {
+            text-align: center;
+            margin-top: 4px;
+            font-size: 9px;
+        }
+        
+        .center {
+            text-align: center;
+        }
+        
+        .currency {
+            text-align: center;
+            margin: 4px 0;
+            font-size: 9px;
+        }
+        
+        .dine-section {
+            text-align: center;
+            margin: 4px 0;
+            font-size: 10px;
+        }
+        
+        .small {
+            font-size: 9px;
+        }
+        
+        .bold {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-name">${organization.name}</div>
+        <div class="company-address">${organization.address}</div>
+    </div>
+    
+    <div class="currency center">Receipt currency: US Dollars</div>
+    
+    <div class="bill-title">BILL</div>
+    
+    <div class="order-info">
+        <div>Order: ${receipt.id.substring(0, 8)} - ${formatDateThermal(receipt.date).split(' ')[1]}</div>
+        <div>Employee: ${client.name}</div>
+        <div>POS: POS 1</div>
+    </div>
+    
+    <div class="separator"></div>
+    
+    <div class="dine-section">
+        <div>Dine in</div>
+    </div>
+    
+    <div class="separator"></div>
+    
+    <div class="center small">
+        <div>${client.name}</div>
+    </div>
+    
+    <div class="separator"></div>
+    
+    ${receipt.transactions.map((transaction, index) => `
+        <div class="item-line">
+            <span class="item-name">${formatPaymentTypeThermal(transaction.paymentType)} Payment</span>
+            <span class="item-price">${formatCurrencyThermal(transaction.amount)}</span>
+        </div>
+        <div class="item-qty">1 x ${formatCurrencyThermal(transaction.amount)}</div>
+        ${getPaymentDetailsThermal(transaction) ? `<div class="small">${getPaymentDetailsThermal(transaction)}</div>` : ''}
+    `).join('')}
+    
+    <div class="separator"></div>
+    
+    <div class="total-section">
+        <div class="total-line">
+            <span class="bold">Amount due</span>
+            <span class="bold">${formatCurrencyThermal(receipt.total)}</span>
+        </div>
+    </div>
+    
+    <div class="separator"></div>
+    
+    <div class="footer">
+        <div class="thank-you center">We Love Coffee!!</div>
+        <div class="timestamp center">${formatDateThermal(new Date().toISOString())}</div>
+    </div>
+</body>
+</html>`;
   };
 
   const generateReceiptHTML = () => {
