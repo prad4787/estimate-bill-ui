@@ -173,3 +173,16 @@ export interface AgingBucket {
   totalAmount: number;
   count: number;
 }
+
+export interface Stock {
+  id: string;
+  name: string;
+  quantity: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StockFormData {
+  name: string;
+  quantity: string;
+}
