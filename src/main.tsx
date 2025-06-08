@@ -2,8 +2,17 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { useAuthStore } from './store/authStore';
 import App from './App';
 import './index.css';
+
+// Initialize auth check on app start
+const initializeAuth = () => {
+  const { checkAuth } = useAuthStore.getState();
+  checkAuth();
+};
+
+initializeAuth();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

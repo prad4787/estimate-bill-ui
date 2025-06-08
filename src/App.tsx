@@ -1,6 +1,8 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 import Layout from './components/layout/Layout';
+import Login from './pages/auth/Login';
 import Dashboard from './pages/Dashboard';
 import ClientList from './pages/clients/ClientList';
 import AddClient from './pages/clients/AddClient';
@@ -20,7 +22,12 @@ import NotFound from './pages/NotFound';
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<Layout />}>
+      <Route path="/login" element={<Login />} />
+      <Route path="/" element={
+        <ProtectedRoute>
+          <Layout />
+        </ProtectedRoute>
+      }>
         <Route index element={<Dashboard />} />
         <Route path="clients">
           <Route index element={<ClientList />} />
