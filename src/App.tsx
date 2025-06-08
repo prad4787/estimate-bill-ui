@@ -16,6 +16,9 @@ import ReceiptList from './pages/receipts/ReceiptList';
 import AddReceipt from './pages/receipts/AddReceipt';
 import EditReceipt from './pages/receipts/EditReceipt';
 import ViewReceipt from './pages/receipts/ViewReceipt';
+import StockList from './pages/stock/StockList';
+import AddStock from './pages/stock/AddStock';
+import EditStock from './pages/stock/EditStock';
 import AgingReport from './pages/reports/AgingReport';
 import OrganizationSettings from './pages/settings/OrganizationSettings';
 import NotFound from './pages/NotFound';
@@ -40,6 +43,11 @@ function App() {
           <Route index element={<EstimateList />} />
           <Route path="add" element={<AddEstimate />} />
           <Route path=":id" element={<ViewEstimate />} />
+        </Route>
+        <Route path="stock">
+          <Route index element={<StockList />} />
+          <Route path="add" element={<AddStock />} />
+          <Route path="edit/:id" element={<EditStock />} />
         </Route>
         <Route path="payments" element={<PaymentMethodList />} />
         <Route path="receipts">
