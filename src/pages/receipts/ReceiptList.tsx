@@ -341,7 +341,7 @@ const ReceiptList: React.FC = () => {
           description="Create your first receipt to get started with payment tracking."
           icon={<Receipt size={64} />}
           action={
-            <Link to="/receipts/add" className="btn btn-primary">
+            <Link to="/receipts/add\" className="btn btn-primary">
               <Plus size={18} />
               Create Receipt
             </Link>
