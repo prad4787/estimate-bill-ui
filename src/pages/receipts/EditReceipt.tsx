@@ -611,5 +611,3 @@ const EditReceipt: React.FC = () => {
 };
 
 export default EditReceipt;
-
-export default EditReceipt
