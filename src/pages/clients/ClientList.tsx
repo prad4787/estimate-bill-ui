@@ -94,7 +94,7 @@ const ClientList: React.FC = () => {
           description="Add your first client to get started with estimating and billing."
           icon={<Users size={64} />}
           action={
-            <Link to="/clients/add\" className=\"btn btn-primary">
+            <Link to="/clients/add\" className="btn btn-primary">
               <Plus size={18} />
               Add Client
             </Link>
