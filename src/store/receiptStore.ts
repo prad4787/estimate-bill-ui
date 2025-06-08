@@ -9,6 +9,7 @@ interface ReceiptState {
   error: string | null;
   fetchReceipts: () => void;
   addReceipt: (receipt: ReceiptFormData) => string;
+  updateReceipt: (id: string, updates: Partial<Receipt>) => void;
   getReceipt: (id: string) => Receipt | undefined;
   deleteReceipt: (id: string) => void;
 }
@@ -69,6 +70,22 @@ export const useReceiptStore = create<ReceiptState>((set, get) => ({
     });
 
     return id;
+  },
+
+  updateReceipt: (id, updates) => {
+    set((state) => {
+      const index = state.receipts.findIndex(r => r.id === id);
+      if (index === -1) return state;
+
+      const updatedReceipts = [...state.receipts];
+      updatedReceipts[index] = {
+        ...updatedReceipts[index],
+        ...updates,
+      };
+
+      saveReceipts(updatedReceipts);
+      return { receipts: updatedReceipts };
+    });
   },
 
   getReceipt: (id) => {

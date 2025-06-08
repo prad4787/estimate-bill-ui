@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Receipt, Search, Printer } from 'lucide-react';
+import { Plus, Receipt, Search, Printer, Edit2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useReceiptStore } from '../../store/receiptStore';
 import { useClientStore } from '../../store/clientStore';
@@ -408,6 +408,13 @@ const ReceiptList: React.FC = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex justify-center gap-1">
+                        <Link
+                          to={`/receipts/edit/${receipt.id}`}
+                          className="action-btn action-btn-primary"
+                          title="Edit receipt"
+                        >
+                          <Edit2 size={16} />
+                        </Link>
                         <button
                           onClick={() => handlePrint(receipt.id)}
                           className="action-btn action-btn-primary"
