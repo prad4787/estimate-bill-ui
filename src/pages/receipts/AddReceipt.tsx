@@ -364,12 +364,10 @@ const AddReceipt: React.FC = () => {
                         value={searchTerm}
                         onChange={(e) => {
                           setSearchTerm(e.target.value);
-                          setShowClientSearch(e.target.value.length > 0);
+                          setShowClientSearch(true);
                         }}
                         onFocus={() => {
-                          if (searchTerm.length === 0) {
-                            setShowClientSearch(true);
-                          }
+                          setShowClientSearch(true);
                         }}
                         onBlur={() => {
                           // Delay hiding to allow clicking on dropdown items
