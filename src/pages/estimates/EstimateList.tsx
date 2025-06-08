@@ -89,7 +89,7 @@ const EstimateList: React.FC = () => {
           description="Create your first estimate to get started."
           icon={<FileText size={48} />}
           action={
-            <Link to="/estimates/add\" className=\"btn btn-primary">
+            <Link to="/estimates/add" className="btn btn-primary">
               Create Estimate
             </Link>
           }
