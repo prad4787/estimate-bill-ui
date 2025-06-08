@@ -6,12 +6,13 @@ import { useReceiptStore } from '../../store/receiptStore';
 import { useClientStore } from '../../store/clientStore';
 import { Transaction, Client, PaymentType, PaymentMedium } from '../../types';
 import ClientModal from '../../components/clients/ClientModal';
+import ClientSelect from '../../components/clients/ClientSelect';
 
 const AddReceipt: React.FC = () => {
   const navigate = useNavigate();
   const { addReceipt } = useReceiptStore();
   const { clients, fetchClients } = useClientStore();
-  
+
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedClient, setSelectedClient] = useState<string>('');
   const [showClientSearch, setShowClientSearch] = useState(false);
@@ -114,9 +115,9 @@ const AddReceipt: React.FC = () => {
                 type="text"
                 className="form-input"
                 value={transaction.chequeDetails?.bankName || ''}
-                onChange={(e) => handleTransactionChange(index, 'chequeDetails', { 
+                onChange={(e) => handleTransactionChange(index, 'chequeDetails', {
                   ...transaction.chequeDetails,
-                  bankName: e.target.value 
+                  bankName: e.target.value
                 })}
                 placeholder="Enter bank name"
                 required
@@ -128,9 +129,9 @@ const AddReceipt: React.FC = () => {
                 type="text"
                 className="form-input"
                 value={transaction.chequeDetails?.chequeNumber || ''}
-                onChange={(e) => handleTransactionChange(index, 'chequeDetails', { 
+                onChange={(e) => handleTransactionChange(index, 'chequeDetails', {
                   ...transaction.chequeDetails,
-                  chequeNumber: e.target.value 
+                  chequeNumber: e.target.value
                 })}
                 placeholder="Enter cheque number"
                 required
@@ -142,9 +143,9 @@ const AddReceipt: React.FC = () => {
                 type="text"
                 className="form-input"
                 value={transaction.chequeDetails?.chequeName || ''}
-                onChange={(e) => handleTransactionChange(index, 'chequeDetails', { 
+                onChange={(e) => handleTransactionChange(index, 'chequeDetails', {
                   ...transaction.chequeDetails,
-                  chequeName: e.target.value 
+                  chequeName: e.target.value
                 })}
                 placeholder="Enter name on cheque"
                 required
@@ -156,9 +157,9 @@ const AddReceipt: React.FC = () => {
                 type="date"
                 className="form-input"
                 value={transaction.chequeDetails?.chequeDate || ''}
-                onChange={(e) => handleTransactionChange(index, 'chequeDetails', { 
+                onChange={(e) => handleTransactionChange(index, 'chequeDetails', {
                   ...transaction.chequeDetails,
-                  chequeDate: e.target.value 
+                  chequeDate: e.target.value
                 })}
                 required
               />
@@ -195,11 +196,10 @@ const AddReceipt: React.FC = () => {
           {relevantMethods.map((method, methodIndex) => (
             <div
               key={methodIndex}
-              className={`p-3 border rounded-xl cursor-pointer transition-all duration-200 ${
-                transaction.paymentMedium === method
+              className={`p-3 border rounded-xl cursor-pointer transition-all duration-200 ${transaction.paymentMedium === method
                   ? 'border-blue-500 bg-blue-50'
                   : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-              }`}
+                }`}
               onClick={() => handleTransactionChange(index, 'paymentMedium', method)}
             >
               <div className="flex justify-between items-center">
@@ -213,11 +213,10 @@ const AddReceipt: React.FC = () => {
                     </div>
                   )}
                 </div>
-                <div className={`w-4 h-4 rounded-full border-2 ${
-                  transaction.paymentMedium === method
+                <div className={`w-4 h-4 rounded-full border-2 ${transaction.paymentMedium === method
                     ? 'border-blue-500 bg-blue-500'
                     : 'border-gray-300'
-                }`}>
+                  }`}>
                   {transaction.paymentMedium === method && (
                     <div className="w-2 h-2 bg-white rounded-full m-0.5"></div>
                   )}
@@ -240,7 +239,7 @@ const AddReceipt: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!selectedClient) {
       toast.error('Please select a client');
       return;
@@ -252,10 +251,10 @@ const AddReceipt: React.FC = () => {
     }
 
     // Validate required fields for cheque transactions
-    const invalidCheque = transactions.some(t => 
-      t.paymentType === 'cheque' && 
-      (!t.chequeDetails?.bankName || !t.chequeDetails?.chequeNumber || 
-       !t.chequeDetails?.chequeName || !t.chequeDetails?.chequeDate)
+    const invalidCheque = transactions.some(t =>
+      t.paymentType === 'cheque' &&
+      (!t.chequeDetails?.bankName || !t.chequeDetails?.chequeNumber ||
+        !t.chequeDetails?.chequeName || !t.chequeDetails?.chequeDate)
     );
 
     if (invalidCheque) {
@@ -264,7 +263,7 @@ const AddReceipt: React.FC = () => {
     }
 
     // Validate payment methods for bank and wallet transactions
-    const invalidPaymentMethod = transactions.some(t => 
+    const invalidPaymentMethod = transactions.some(t =>
       (t.paymentType === 'bank' || t.paymentType === 'wallet') && !t.paymentMedium
     );
 
@@ -281,7 +280,7 @@ const AddReceipt: React.FC = () => {
         clientId: selectedClient,
         transactions,
       });
-      
+
       toast.success('Receipt created successfully');
       navigate('/receipts');
     } catch (error) {
@@ -299,7 +298,7 @@ const AddReceipt: React.FC = () => {
   return (
     <div className="space-y-8 animate-fade-in">
       <div>
-        <button 
+        <button
           onClick={() => navigate('/receipts')}
           className="inline-flex items-center text-gray-600 mb-6"
         >
@@ -333,144 +332,12 @@ const AddReceipt: React.FC = () => {
               </div>
 
               <div className="relative">
-                <label className="form-label">Client</label>
-                {selectedClient ? (
-                  <div className="flex justify-between items-center p-4 border border-gray-300 rounded-xl bg-gradient-to-r from-green-50 to-green-100">
-                    <div>
-                      <div className="font-semibold text-gray-900">
-                        {clients.find(c => c.id === selectedClient)?.name}
-                      </div>
-                      {clients.find(c => c.id === selectedClient)?.address && (
-                        <div className="text-sm text-gray-600">
-                          {clients.find(c => c.id === selectedClient)?.address}
-                        </div>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedClient('')}
-                      className="btn btn-outline btn-sm"
-                    >
-                      Change
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="relative">
-                      <input
-                        type="text"
-                        className="form-input"
-                        placeholder="Search existing clients..."
-                        value={searchTerm}
-                        onChange={(e) => {
-                          setSearchTerm(e.target.value);
-                          setShowClientSearch(true);
-                        }}
-                        onFocus={() => {
-                          setShowClientSearch(true);
-                        }}
-                        onBlur={() => {
-                          // Delay hiding to allow clicking on dropdown items
-                          setTimeout(() => setShowClientSearch(false), 200);
-                        }}
-                      />
-                      {showClientSearch && (
-                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                          {searchTerm.length === 0 ? (
-                            // Show all clients when no search term
-                            clients.length > 0 ? (
-                              <>
-                                <div className="px-4 py-2 text-xs font-medium text-gray-500 bg-gray-50 border-b border-gray-100">
-                                  All Clients ({clients.length})
-                                </div>
-                                {clients.slice(0, 10).map(client => (
-                                  <div
-                                    key={client.id}
-                                    className="p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-                                    onClick={() => {
-                                      setSelectedClient(client.id);
-                                      setShowClientSearch(false);
-                                      setSearchTerm('');
-                                    }}
-                                  >
-                                    <div className="font-medium text-gray-900">{client.name}</div>
-                                    {client.address && (
-                                      <div className="text-sm text-gray-500">{client.address}</div>
-                                    )}
-                                  </div>
-                                ))}
-                                {clients.length > 10 && (
-                                  <div className="px-4 py-2 text-xs text-gray-500 bg-gray-50 text-center">
-                                    Type to search through all {clients.length} clients
-                                  </div>
-                                )}
-                              </>
-                            ) : (
-                              <div className="p-4 text-gray-500 text-center">
-                                No clients found. Create your first client below.
-                              </div>
-                            )
-                          ) : filteredClients.length > 0 ? (
-                            // Show filtered results when searching
-                            <>
-                              <div className="px-4 py-2 text-xs font-medium text-gray-500 bg-gray-50 border-b border-gray-100">
-                                Search Results ({filteredClients.length})
-                              </div>
-                              {filteredClients.map(client => (
-                                <div
-                                  key={client.id}
-                                  className="p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-                                  onClick={() => {
-                                    setSelectedClient(client.id);
-                                    setShowClientSearch(false);
-                                    setSearchTerm('');
-                                  }}
-                                >
-                                  <div className="font-medium text-gray-900">{client.name}</div>
-                                  {client.address && (
-                                    <div className="text-sm text-gray-500">{client.address}</div>
-                                  )}
-                                </div>
-                              ))}
-                            </>
-                          ) : (
-                            // No search results
-                            <div className="p-4 text-gray-500 text-center">
-                              No clients match "{searchTerm}"
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="mt-6">
-                      <div className="relative">
-                        <div className="absolute inset-0 flex items-center">
-                          <div className="w-full border-t border-gray-300" />
-                        </div>
-                        <div className="relative flex justify-center text-sm">
-                          <span className="px-4 bg-white text-gray-500 font-medium">Don't see your client?</span>
-                        </div>
-                      </div>
-                      
-                      <div className="mt-6">
-                        <button
-                          type="button"
-                          onClick={() => setShowClientModal(true)}
-                          className="w-full flex items-center justify-center gap-3 px-6 py-4 border-2 border-dashed border-blue-300 rounded-xl text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 group"
-                        >
-                          <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors duration-200">
-                            <UserPlus size={20} />
-                          </div>
-                          <div className="text-left">
-                            <div className="font-semibold">Create New Client</div>
-                            <div className="text-sm text-blue-500">Add a new client to your database</div>
-                          </div>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                <ClientSelect
+                  clients={clients}
+                  selectedClient={selectedClient}
+                  setSelectedClient={setSelectedClient}
+                  onClientCreated={handleClientCreated}
+                />
               </div>
             </div>
           </div>
