@@ -12,6 +12,7 @@ import ViewEstimate from './pages/estimates/ViewEstimate';
 import PaymentMethodList from './pages/payments/PaymentMethodList';
 import ReceiptList from './pages/receipts/ReceiptList';
 import AddReceipt from './pages/receipts/AddReceipt';
+import OrganizationSettings from './pages/settings/OrganizationSettings';
 import NotFound from './pages/NotFound';
 
 function App() {
@@ -35,6 +36,7 @@ function App() {
           <Route index element={<ReceiptList />} />
           <Route path="add" element={<AddReceipt />} />
         </Route>
+        <Route path="settings" element={<OrganizationSettings />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

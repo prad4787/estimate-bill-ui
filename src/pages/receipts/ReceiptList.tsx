@@ -4,6 +4,7 @@ import { Plus, Receipt, Search, Printer } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useReceiptStore } from '../../store/receiptStore';
 import { useClientStore } from '../../store/clientStore';
+import { useOrganizationStore } from '../../store/organizationStore';
 import EmptyState from '../../components/ui/EmptyState';
 
 const ITEMS_PER_PAGE = 10;
@@ -11,13 +12,15 @@ const ITEMS_PER_PAGE = 10;
 const ReceiptList: React.FC = () => {
   const { receipts, fetchReceipts, deleteReceipt } = useReceiptStore();
   const { clients, fetchClients } = useClientStore();
+  const { organization, fetchOrganization } = useOrganizationStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   
   useEffect(() => {
     fetchReceipts();
     fetchClients();
-  }, [fetchReceipts, fetchClients]);
+    fetchOrganization();
+  }, [fetchReceipts, fetchClients, fetchOrganization]);
 
   const handleDelete = (id: string) => {
     if (window.confirm('Are you sure you want to delete this receipt?')) {
@@ -36,7 +39,7 @@ const ReceiptList: React.FC = () => {
     }
 
     // Create thermal printer formatted content
-    const thermalContent = generateThermalReceipt(receipt, client);
+    const thermalContent = generateThermalReceipt(receipt, client, organization);
     
     // Create a new window for printing
     const printWindow = window.open('', '_blank');
@@ -49,7 +52,7 @@ const ReceiptList: React.FC = () => {
     }
   };
 
-  const generateThermalReceipt = (receipt: any, client: any) => {
+  const generateThermalReceipt = (receipt: any, client: any, org: any) => {
     const formatDate = (dateString: string) => {
       return new Date(dateString).toLocaleDateString('en-US', {
         year: 'numeric',
@@ -213,8 +216,10 @@ const ReceiptList: React.FC = () => {
 </head>
 <body>
     <div class="header">
-        <div class="company-name">BILLMANAGER</div>
-        <div class="small">Estimate & Bill Management</div>
+        <div class="company-name">${org.name.toUpperCase()}</div>
+        <div class="small">${org.address}</div>
+        ${org.phones.length > 0 ? `<div class="small">Tel: ${org.phones[0]}</div>` : ''}
+        ${org.emails.length > 0 ? `<div class="small">Email: ${org.emails[0]}</div>` : ''}
         <div class="receipt-title">PAYMENT RECEIPT</div>
     </div>
     
@@ -267,6 +272,7 @@ const ReceiptList: React.FC = () => {
         <div>Thank you for your payment!</div>
         <div class="small">This is a computer generated receipt</div>
         <div class="small">No signature required</div>
+        ${org.website ? `<div class="small">${org.website}</div>` : ''}
     </div>
 </body>
 </html>`;

@@ -1,17 +1,23 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Printer, Download } from 'lucide-react';
 import { useEstimateStore } from '../../store/estimateStore';
 import { useClientStore } from '../../store/clientStore';
+import { useOrganizationStore } from '../../store/organizationStore';
 
 const ViewEstimate: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getEstimate } = useEstimateStore();
   const { getClient } = useClientStore();
+  const { organization, fetchOrganization } = useOrganizationStore();
   
   const estimate = id ? getEstimate(id) : undefined;
   const client = estimate ? getClient(estimate.clientId) : undefined;
+
+  useEffect(() => {
+    fetchOrganization();
+  }, [fetchOrganization]);
 
   if (!estimate || !client) {
     return (
@@ -36,6 +42,13 @@ const ViewEstimate: React.FC = () => {
     });
   };
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -46,119 +59,181 @@ const ViewEstimate: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-8 animate-fade-in">
+      <div className="flex justify-between items-center no-print">
         <button 
           onClick={() => navigate('/estimates')}
-          className="inline-flex items-center text-gray-500 hover:text-gray-700"
+          className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors duration-200"
         >
-          <ArrowLeft size={16} className="mr-1" />
+          <ArrowLeft size={18} className="mr-2" />
           Back to Estimates
         </button>
         <div className="flex gap-3">
           <button
             onClick={handlePrint}
-            className="btn btn-outline inline-flex items-center"
+            className="btn btn-outline"
           >
-            <Printer size={16} className="mr-2" />
+            <Printer size={18} />
             Print
           </button>
           <button
             onClick={handleDownload}
-            className="btn btn-primary inline-flex items-center"
+            className="btn btn-primary"
           >
-            <Download size={16} className="mr-2" />
+            <Download size={18} />
             Download PDF
           </button>
         </div>
       </div>
 
-      <div className="card p-8" id="estimate-print">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">ESTIMATE</h1>
-          <div className="mt-4 grid grid-cols-2 gap-8">
-            <div>
-              <h3 className="font-medium mb-2">Bill To:</h3>
-              <div className="text-gray-600">
-                <p className="font-medium">{client.name}</p>
-                {client.address && <p>{client.address}</p>}
-                {client.panVat && <p>PAN/VAT: {client.panVat}</p>}
+      <div className="card" id="estimate-print">
+        <div className="card-body p-8">
+          {/* Header with Organization Info */}
+          <div className="flex justify-between items-start mb-8 pb-6 border-b border-gray-200">
+            <div className="flex items-start gap-6">
+              {organization.logo && (
+                <div className="flex-shrink-0">
+                  <img
+                    src={organization.logo}
+                    alt={organization.name}
+                    className="h-16 w-auto object-contain"
+                  />
+                </div>
+              )}
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">{organization.name}</h1>
+                <div className="text-sm text-gray-600 space-y-1">
+                  <p>{organization.address}</p>
+                  <div className="flex flex-wrap gap-4">
+                    {organization.phones.length > 0 && (
+                      <span>Phone: {organization.phones[0]}</span>
+                    )}
+                    {organization.emails.length > 0 && (
+                      <span>Email: {organization.emails[0]}</span>
+                    )}
+                  </div>
+                  {organization.website && (
+                    <p>Website: {organization.website}</p>
+                  )}
+                </div>
               </div>
             </div>
             <div className="text-right">
-              <div className="space-y-1">
-                <p>
-                  <span className="font-medium">Estimate Number: </span>
-                  {estimate.number}
-                </p>
-                <p>
-                  <span className="font-medium">Date: </span>
-                  {formatDate(estimate.date)}
-                </p>
+              <h2 className="text-3xl font-bold text-blue-600 mb-2">ESTIMATE</h2>
+              <div className="text-sm text-gray-600 space-y-1">
+                <p><span className="font-medium">Number:</span> {estimate.number}</p>
+                <p><span className="font-medium">Date:</span> {formatDate(estimate.date)}</p>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50">
-                <th className="px-4 py-2 text-left">SN</th>
-                <th className="px-4 py-2 text-left">Item</th>
-                <th className="px-4 py-2 text-right">Quantity</th>
-                <th className="px-4 py-2 text-right">Rate</th>
-                <th className="px-4 py-2 text-right">Total</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {estimate.items.map((item, index) => (
-                <React.Fragment key={index}>
-                  <tr>
-                    <td className="px-4 py-2">{item.sn}</td>
-                    <td className="px-4 py-2">{item.item}</td>
-                    <td className="px-4 py-2 text-right">{item.quantity}</td>
-                    <td className="px-4 py-2 text-right">${item.rate.toFixed(2)}</td>
-                    <td className="px-4 py-2 text-right">${item.total.toFixed(2)}</td>
-                  </tr>
-                  {item.description && (
-                    <tr>
-                      <td></td>
-                      <td colSpan={4} className="px-4 py-2 text-gray-600 text-sm">
-                        {item.description}
-                      </td>
+          {/* Client Information */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Bill To:</h3>
+              <div className="text-gray-700">
+                <p className="font-medium text-lg">{client.name}</p>
+                {client.address && <p className="mt-1">{client.address}</p>}
+                {client.panVat && <p className="mt-1">PAN/VAT: {client.panVat}</p>}
+              </div>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">From:</h3>
+              <div className="text-gray-700">
+                <p className="font-medium">{organization.name}</p>
+                <p>{organization.address}</p>
+                {organization.taxId && <p>Tax ID: {organization.taxId}</p>}
+                {organization.registrationNumber && <p>Reg. No: {organization.registrationNumber}</p>}
+              </div>
+            </div>
+          </div>
+
+          {/* Items Table */}
+          <div className="overflow-x-auto mb-8">
+            <table className="w-full border border-gray-200">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">SN</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">Item</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-gray-200">Quantity</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700 border-b border-gray-200">Rate</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700 border-b border-gray-200">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {estimate.items.map((item, index) => (
+                  <React.Fragment key={index}>
+                    <tr className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      <td className="px-4 py-3 text-sm text-gray-900 border-b border-gray-200">{item.sn}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900 border-b border-gray-200 font-medium">{item.item}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900 border-b border-gray-200 text-center">{item.quantity}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900 border-b border-gray-200 text-right">{formatCurrency(item.rate)}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900 border-b border-gray-200 text-right font-medium">{formatCurrency(item.total)}</td>
                     </tr>
-                  )}
-                </React.Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    {item.description && (
+                      <tr className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        <td></td>
+                        <td colSpan={4} className="px-4 py-2 text-sm text-gray-600 italic border-b border-gray-200">
+                          {item.description}
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-        <div className="mt-8 flex justify-end">
-          <div className="w-64 space-y-3">
-            <div className="flex justify-between">
-              <span>Subtotal:</span>
-              <span>${estimate.subTotal.toFixed(2)}</span>
+          {/* Totals */}
+          <div className="flex justify-end">
+            <div className="w-80">
+              <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Subtotal:</span>
+                    <span className="font-medium text-gray-900">{formatCurrency(estimate.subTotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">
+                      Discount 
+                      {estimate.discountType === 'rate' 
+                        ? ` (${estimate.discountValue}%)`
+                        : ''}:
+                    </span>
+                    <span className="font-medium text-gray-900">-{formatCurrency(estimate.discountAmount)}</span>
+                  </div>
+                  <div className="border-t border-gray-300 pt-3">
+                    <div className="flex justify-between">
+                      <span className="text-lg font-semibold text-gray-900">Total:</span>
+                      <span className="text-xl font-bold text-blue-600">{formatCurrency(estimate.total)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span>
-                Discount 
-                {estimate.discountType === 'rate' 
-                  ? ` (${estimate.discountValue}%)`
-                  : ''}:
-              </span>
-              <span>${estimate.discountAmount.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between font-medium text-lg border-t pt-2">
-              <span>Total:</span>
-              <span>${estimate.total.toFixed(2)}</span>
+          </div>
+
+          {/* Footer */}
+          <div className="mt-12 pt-6 border-t border-gray-200 text-center">
+            <div className="text-sm text-gray-600">
+              <p className="mb-2">Thank you for your business!</p>
+              <div className="flex justify-center gap-6 text-xs">
+                {organization.phones.length > 0 && (
+                  <span>Phone: {organization.phones[0]}</span>
+                )}
+                {organization.emails.length > 0 && (
+                  <span>Email: {organization.emails[0]}</span>
+                )}
+                {organization.website && (
+                  <span>Web: {organization.website}</span>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
   );
-}
+};
 
-export default ViewEstimate
+export default ViewEstimate;

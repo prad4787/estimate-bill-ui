@@ -110,3 +110,24 @@ export interface ReceiptFormData {
   clientId: string;
   transactions: Omit<Transaction, 'id'>[];
 }
+
+export interface OrganizationInfo {
+  name: string;
+  address: string;
+  phones: string[];
+  emails: string[];
+  logo?: string;
+  website?: string;
+  taxId?: string;
+  registrationNumber?: string;
+}
+
+export interface OrganizationFormData {
+  name: string;
+  address: string;
+  phones: string[];
+  emails: string[];
+  website: string;
+  taxId: string;
+  registrationNumber: string;
+}
