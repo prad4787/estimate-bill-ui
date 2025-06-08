@@ -266,12 +266,16 @@ const AddEstimate: React.FC = () => {
                       <tr>
                         <td className="px-4 py-3 text-sm text-gray-900">{item.sn}</td>
                         <td className="px-4 py-3">
-                          <input
-                            type="text"
-                            className="form-input"
-                            value={item.item}
-                            onChange={(e) => handleItemChange(index, 'item', e.target.value)}
-                            placeholder="Item name"
+                          <SearchableSelect
+                            options={stockOptions}
+                            value={stockOptions.find(opt => opt.name === item.item) || null}
+                            onChange={(option) => handleItemChange(index, 'stockOption', option)}
+                            onCreateNew={handleCreateStock}
+                            placeholder="Select or create item..."
+                            searchPlaceholder="Search items or type to create..."
+                            createLabel="Create item"
+                            renderOption={renderStockOption}
+                            className="min-w-[250px]"
                           />
                         </td>
                         <td className="px-4 py-3">
@@ -286,18 +290,14 @@ const AddEstimate: React.FC = () => {
                         <td className="px-4 py-3">
                           <div className="relative">
                             <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                            <input
                               type="number"
                               className="form-input pl-8"
-                            <SearchableSelect
-                              options={stockOptions}
-                              value={selectedStockOption}
-                              onChange={(option) => handleItemChange(index, 'stockOption', option)}
-                              onCreateNew={handleCreateStock}
-                              placeholder="Select or create item..."
-                              searchPlaceholder="Search items or type to create..."
-                              createLabel="Create item"
-                              renderOption={renderStockOption}
-                              className="min-w-[250px]"
+                              value={item.rate}
+                              onChange={(e) => handleItemChange(index, 'rate', Number(e.target.value))}
+                              min="0"
+                              step="0.01"
+                              placeholder="0.00"
                             />
                           </div>
                         </td>
