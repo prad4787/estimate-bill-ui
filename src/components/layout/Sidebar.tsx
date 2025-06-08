@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { X, Home, Users, FileText, CreditCard, Receipt, Settings, TrendingUp, Building2 } from 'lucide-react';
+import { X, Home, Users, FileText, CreditCard, Receipt, Settings, TrendingUp, Building2, BarChart3 } from 'lucide-react';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -90,6 +90,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, closeSidebar }) => {
               <span>Payment Methods</span>
             </NavLink>
 
+            <NavLink 
+              to="/reports/aging" 
+              className={({isActive}) => `sidebar-link ${isActive ? 'active' : ''}`}
+            >
+              <BarChart3 size={20} />
+              <span>Aging Report</span>
+            </NavLink>
             <div className="px-3 py-2">
               <div className="border-t border-gray-200"></div>
             </div>

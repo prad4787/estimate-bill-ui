@@ -150,3 +150,26 @@ export interface LoginCredentials {
   email: string;
   password: string;
 }
+
+export interface Bill {
+  id: string;
+  billNumber: string;
+  clientId: string;
+  clientName: string;
+  issueDate: string;
+  dueDate: string;
+  amount: number;
+  paidAmount: number;
+  remainingAmount: number;
+  status: 'paid' | 'partial' | 'unpaid' | 'overdue';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AgingBucket {
+  label: string;
+  range: string;
+  bills: Bill[];
+  totalAmount: number;
+  count: number;
+}

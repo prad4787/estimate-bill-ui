@@ -16,6 +16,7 @@ import ReceiptList from './pages/receipts/ReceiptList';
 import AddReceipt from './pages/receipts/AddReceipt';
 import EditReceipt from './pages/receipts/EditReceipt';
 import ViewReceipt from './pages/receipts/ViewReceipt';
+import AgingReport from './pages/reports/AgingReport';
 import OrganizationSettings from './pages/settings/OrganizationSettings';
 import NotFound from './pages/NotFound';
 
@@ -46,6 +47,9 @@ function App() {
           <Route path="add" element={<AddReceipt />} />
           <Route path="edit/:id" element={<EditReceipt />} />
           <Route path="view/:id" element={<ViewReceipt />} />
+        </Route>
+        <Route path="reports">
+          <Route path="aging" element={<AgingReport />} />
         </Route>
         <Route path="settings" element={<OrganizationSettings />} />
         <Route path="settings/general" element={<OrganizationSettings />} />
