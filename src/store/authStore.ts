@@ -1,40 +1,25 @@
 import { create } from "zustand";
 import { User, AuthState, LoginCredentials } from "../types";
+import { api } from "../api/instance";
 
 const AUTH_TOKEN_KEY = "billmanager-auth-token";
 const AUTH_USER_KEY = "billmanager-auth-user";
 
-// Mock user data
-const MOCK_USER: User = {
-  id: "user_1",
-  email: "admin@billmanager.com",
-  name: "Admin User",
-  role: "Administrator",
-};
-
-// Mock credentials
-const MOCK_CREDENTIALS = {
-  email: "admin@billmanager.com",
-  password: "admin123",
-};
+// Remove mock user and credentials
 
 interface AuthStore extends AuthState {
   login: (credentials: LoginCredentials) => Promise<boolean>;
   logout: () => void;
   checkAuth: () => void;
-  generateToken: () => string;
+}
+
+// Add this type for the login response
+interface LoginResponse {
+  token: string;
+  user: User;
 }
 
 // Generate a random token
-const generateRandomToken = (): string => {
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let token = "";
-  for (let i = 0; i < 64; i++) {
-    token += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return token;
-};
 
 // Load auth data from localStorage
 const loadAuthData = (): { user: User | null; token: string | null } => {
@@ -44,7 +29,7 @@ const loadAuthData = (): { user: User | null; token: string | null } => {
     const user = userStr ? JSON.parse(userStr) : null;
 
     // Validate token exists and user data is complete
-    if (token && user && user.id && user.email && user.name) {
+    if (token && user && user.id && user.email && user.role) {
       return { user, token };
     }
 
@@ -58,6 +43,7 @@ const loadAuthData = (): { user: User | null; token: string | null } => {
 // Save auth data to localStorage
 const saveAuthData = (user: User, token: string): void => {
   try {
+    console.log("saving auth data", { user, token });
     localStorage.setItem(AUTH_TOKEN_KEY, token);
     localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
   } catch (error) {
@@ -75,7 +61,7 @@ const clearAuthData = (): void => {
   }
 };
 
-export const useAuthStore = create<AuthStore>((set, get) => {
+export const useAuthStore = create<AuthStore>((set) => {
   // Initialize with data from localStorage
   const { user, token } = loadAuthData();
 
@@ -85,31 +71,21 @@ export const useAuthStore = create<AuthStore>((set, get) => {
     isAuthenticated: !!(user && token),
     isLoading: false,
 
-    generateToken: () => {
-      return generateRandomToken();
-    },
-
     login: async (credentials: LoginCredentials): Promise<boolean> => {
       set({ isLoading: true });
       try {
-        const response = await fetch("/api/auth/login", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(credentials),
-        });
-        const result = await response.json();
-        if (
-          response.ok &&
-          result.success &&
-          result.data?.token &&
-          result.data?.user
-        ) {
-          saveAuthData(result.data.user, result.data.token);
+        const result = await api.post<LoginResponse, LoginCredentials>(
+          "/auth/login",
+          credentials
+        );
+        const { success, data } = result;
+        console.log({ result });
+        if (success && data?.token && data?.user) {
+          console.log({ data });
+          saveAuthData(data.user, data.token);
           set({
-            user: result.data.user,
-            token: result.data.token,
+            user: data.user,
+            token: data.token,
             isAuthenticated: true,
             isLoading: false,
           });
@@ -118,8 +94,7 @@ export const useAuthStore = create<AuthStore>((set, get) => {
           set({ isLoading: false });
           return false;
         }
-      } catch (error) {
-        console.error("Login error:", error);
+      } catch {
         set({ isLoading: false });
         return false;
       }

@@ -1,7 +1,7 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Edit2, Trash2, MapPin, FileText, Calendar, Eye } from 'lucide-react';
-import { Client } from '../../types';
+import React from "react";
+import { Link } from "react-router-dom";
+import { Edit2, Trash2, MapPin, FileText, Calendar, Eye } from "lucide-react";
+import { Client } from "../../types";
 
 interface ClientCardProps {
   client: Client;
@@ -11,17 +11,17 @@ interface ClientCardProps {
 const ClientCard: React.FC<ClientCardProps> = ({ client, onDelete }) => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+    return new Intl.DateTimeFormat("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     }).format(date);
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
     }).format(amount);
   };
 
@@ -39,7 +39,7 @@ const ClientCard: React.FC<ClientCardProps> = ({ client, onDelete }) => {
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
               {client.name}
             </h3>
-            
+
             <div className="space-y-2">
               {client.panVat && (
                 <div className="flex items-center text-sm text-gray-600">
@@ -47,36 +47,34 @@ const ClientCard: React.FC<ClientCardProps> = ({ client, onDelete }) => {
                   <span>{client.panVat}</span>
                 </div>
               )}
-              
+
               {client.address && (
                 <div className="flex items-center text-sm text-gray-600">
                   <MapPin size={16} className="mr-2 text-gray-400" />
                   <span className="line-clamp-2">{client.address}</span>
                 </div>
               )}
-              
+
               <div className="flex items-center text-sm text-gray-500">
                 <Calendar size={16} className="mr-2 text-gray-400" />
                 <span>Added {formatDate(client.createdAt)}</span>
               </div>
             </div>
           </div>
-          
+
           <div className="text-right ml-4">
             <div className="text-2xl font-bold text-gray-900 mb-1">
               {formatCurrency(client.openingBalance)}
             </div>
-            <div className="badge badge-primary">
-              Opening Balance
-            </div>
+            <div className="badge badge-primary">Opening Balance</div>
           </div>
         </div>
       </div>
-      
+
       <div className="card-footer flex justify-between items-center">
         <div>
           <span className="text-xs text-gray-500 font-medium">
-            ID: {client.id.substring(0, 8)}...
+            ID: {client.id.toString().substring(0, 8)}...
           </span>
         </div>
         <div className="flex space-x-1">

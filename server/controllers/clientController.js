@@ -1,4 +1,5 @@
 const clientService = require("../services/clientService");
+const { validateClientInput } = require("../utils/validate");
 
 exports.listClients = async (req, res, next) => {
   try {
@@ -21,6 +22,10 @@ exports.getClient = async (req, res, next) => {
 };
 
 exports.createClient = async (req, res, next) => {
+  const { valid, errors } = validateClientInput(req.body);
+  if (!valid) {
+    return res.apiValidationError(errors);
+  }
   try {
     const client = await clientService.createClient(req.body);
     res.apiSuccess(client, "Client created", 201);

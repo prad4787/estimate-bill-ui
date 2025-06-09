@@ -3,12 +3,16 @@ const express = require("express");
 const app = express();
 const path = require("path");
 const apiResponse = require("./utils/apiResponse");
-const clientRoutes = require("./routes/client");
-const authRoutes = require("./routes/auth");
+const indexRoutes = require("./routes");
+const cors = require("cors");
 
 // Serve static files from React build
 const distPath = path.join(__dirname, "../dist");
 app.use(express.static(distPath));
+
+app.use(cors());
+// parse json
+app.use(express.json());
 
 // db init
 const { initDatabase } = require("./models");
@@ -51,16 +55,16 @@ app.use((err, req, res, next) => {
 });
 
 // for all route return index.html
-app.get("*", (req, res) => {
-  res.sendFile(path.join(distPath, "index.html"));
-});
 
 app.get("/", (req, res) => {
   res.send("Hello from Express!");
 });
 
-app.use("/api/clients", clientRoutes);
-app.use("/api/auth", authRoutes);
+app.use("/api", indexRoutes);
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(distPath, "index.html"));
+});
 
 app.listen(AppConfig.PORT, () => {
   console.log(`Server is running on port ${AppConfig.PORT}`);

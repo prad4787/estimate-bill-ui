@@ -31,7 +31,7 @@ export interface Estimate {
   clientId: string;
   items: EstimateItem[];
   subTotal: number;
-  discountType: 'rate' | 'amount';
+  discountType: "rate" | "amount";
   discountValue: number;
   discountAmount: number;
   total: number;
@@ -44,11 +44,11 @@ export interface EstimateFormData {
   date: string;
   clientId: string;
   items: EstimateItem[];
-  discountType: 'rate' | 'amount';
+  discountType: "rate" | "amount";
   discountValue: number;
 }
 
-export type PaymentType = 'cash' | 'wallet' | 'bank' | 'cheque';
+export type PaymentType = "cash" | "wallet" | "bank" | "cheque";
 
 export interface BasePaymentMedium {
   type: PaymentType;
@@ -56,12 +56,12 @@ export interface BasePaymentMedium {
 }
 
 export interface CashPayment extends BasePaymentMedium {
-  type: 'cash';
+  type: "cash";
   balance?: number;
 }
 
 export interface WalletPayment extends BasePaymentMedium {
-  type: 'wallet';
+  type: "wallet";
   walletName: string;
   accountName: string;
   accountNumber: string;
@@ -69,7 +69,7 @@ export interface WalletPayment extends BasePaymentMedium {
 }
 
 export interface BankPayment extends BasePaymentMedium {
-  type: 'bank';
+  type: "bank";
   bankName: string;
   accountName: string;
   accountNumber: string;
@@ -77,10 +77,14 @@ export interface BankPayment extends BasePaymentMedium {
 }
 
 export interface ChequePayment extends BasePaymentMedium {
-  type: 'cheque';
+  type: "cheque";
 }
 
-export type PaymentMedium = CashPayment | WalletPayment | BankPayment | ChequePayment;
+export type PaymentMedium =
+  | CashPayment
+  | WalletPayment
+  | BankPayment
+  | ChequePayment;
 
 export interface Transaction {
   id: string;
@@ -108,7 +112,7 @@ export interface Receipt {
 export interface ReceiptFormData {
   date: string;
   clientId: string;
-  transactions: Omit<Transaction, 'id'>[];
+  transactions: Omit<Transaction, "id">[];
 }
 
 export interface OrganizationInfo {
@@ -133,10 +137,10 @@ export interface OrganizationFormData {
 }
 
 export interface User {
-  id: string;
+  id: number;
   email: string;
-  name: string;
   role: string;
+  name?: string;
 }
 
 export interface AuthState {
@@ -161,7 +165,7 @@ export interface Bill {
   amount: number;
   paidAmount: number;
   remainingAmount: number;
-  status: 'paid' | 'partial' | 'unpaid' | 'overdue';
+  status: "paid" | "partial" | "unpaid" | "overdue";
   createdAt: string;
   updatedAt: string;
 }
@@ -185,4 +189,19 @@ export interface Stock {
 export interface StockFormData {
   name: string;
   quantity: string;
+}
+
+export interface Pagination {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface ApiResponse<T> {
+  status: number;
+  success: boolean;
+  message: string;
+  data: T;
+  pagination?: Pagination;
 }
