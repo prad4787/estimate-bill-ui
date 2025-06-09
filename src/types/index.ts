@@ -198,6 +198,13 @@ export interface Pagination {
   totalPages: number;
 }
 
+export interface ApiError {
+  status: number;
+  success: boolean;
+  message: string;
+  errors?: Record<string, string>;
+}
+
 export interface ApiResponse<T> {
   status: number;
   success: boolean;

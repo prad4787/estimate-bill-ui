@@ -42,14 +42,12 @@ axiosInstance.interceptors.response.use(
 
     if (
       error.response &&
-      error.response.status === 400 &&
+      error.response.status >= 400 &&
+      error.response.status < 500 &&
       (error.response.data as { errors: Record<string, string> })?.errors
     ) {
-      return Promise.reject({
-        validationErrors: (
-          error.response.data as { errors: Record<string, string> }
-        ).errors,
-      });
+      console.log({ error: error.response.data });
+      return Promise.reject(error.response.data);
     }
     // Other errors
     toast.error(

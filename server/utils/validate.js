@@ -31,6 +31,15 @@ function validateClientInput(data) {
   };
 }
 
+function validateClientRequest(req, res, next) {
+  const { valid, errors } = validateClientInput(req.body);
+  if (!valid) {
+    return res.apiValidationError(errors);
+  }
+  next();
+}
+
 module.exports = {
   validateClientInput,
+  validateClientRequest,
 };

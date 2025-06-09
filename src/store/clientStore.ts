@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { Client, Pagination } from "../types";
+import { ApiError, Client, Pagination } from "../types";
 import { api } from "../api/instance";
 
 interface ClientState {
@@ -11,7 +11,7 @@ interface ClientState {
   fetchClients: () => Promise<void>;
   addClient: (
     client: Omit<Client, "id" | "createdAt" | "updatedAt">
-  ) => Promise<Client | null>;
+  ) => Promise<Client>;
   updateClient: (id: string, client: Partial<Client>) => Promise<Client | null>;
   deleteClient: (id: string) => Promise<boolean>;
   getClient: (id: string) => Client | undefined;
@@ -46,7 +46,6 @@ export const useClientStore = create<ClientState>((set, get) => ({
       const res = await api.get<Client[]>(
         `/clients?search=${search}&page=${page}&limit=${limit}`
       );
-      console.log({ res });
       set({
         clients: res.data,
         pagination: res.pagination,
@@ -66,7 +65,7 @@ export const useClientStore = create<ClientState>((set, get) => ({
     }
   },
 
-  addClient: async (clientData) => {
+  addClient: async (clientData): Promise<Client> => {
     try {
       const res = await api.post<
         Client,
@@ -74,8 +73,8 @@ export const useClientStore = create<ClientState>((set, get) => ({
       >(`/clients`, clientData);
       set((state) => ({ clients: [...state.clients, res.data] }));
       return res.data;
-    } catch {
-      return null;
+    } catch (error: unknown) {
+      throw error as ApiError;
     }
   },
 
