@@ -1,38 +1,39 @@
-import React, { useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { ArrowLeft, UserPlus } from "lucide-react";
 import { useClientStore } from "../../store/clientStore";
 import { ApiError, Client, ClientFormData } from "../../types";
-import ClientForm from "../../components/clients/ClientForm";
+import { Form } from "../../components/form/Form";
+import FormField from "../../components/form/FormField";
+import { validateClient } from "../../utils/validation";
 
 const AddClient: React.FC = () => {
   const navigate = useNavigate();
   const { addClient } = useClientStore();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  const handleSubmit = async (formData: ClientFormData) => {
-    setIsSubmitting(true);
-    setFieldErrors({});
+  const initialValues: ClientFormData = {
+    name: "",
+    address: "",
+    panVat: "",
+    openingBalance: "0",
+  };
 
+  const handleSubmit = async (values: ClientFormData) => {
     try {
       const result: Client = await addClient({
-        name: formData.name,
-        address: formData.address || undefined,
-        panVat: formData.panVat || undefined,
-        openingBalance: parseFloat(formData.openingBalance) || 0,
+        name: values.name,
+        address: values.address || undefined,
+        panVat: values.panVat || undefined,
+        openingBalance: parseFloat(values.openingBalance) || 0,
       });
-
       toast.success(`Client ${result.name} added successfully`);
       navigate("/clients");
     } catch (error) {
       const apiError = error as ApiError;
       toast.error(apiError.message);
-      setFieldErrors((prev) => ({ ...prev, ...apiError.errors }));
-      console.error(apiError.errors);
-    } finally {
-      setIsSubmitting(false);
+      // Errors will be handled by the form system if you wire up external error support
+      // Optionally, you can set field errors here if you extend the Form component
     }
   };
 
@@ -72,11 +73,34 @@ const AddClient: React.FC = () => {
           </p>
         </div>
         <div className="card-body">
-          <ClientForm
+          <Form<ClientFormData>
+            initialValues={initialValues}
+            validate={validateClient}
             onSubmit={handleSubmit}
-            isSubmitting={isSubmitting}
-            externalErrors={fieldErrors}
-          />
+          >
+            <FormField name="name" label="Client Name" required />
+            <FormField name="panVat" label="PAN/VAT Number" />
+            <FormField name="address" label="Address" as="textarea" />
+            <FormField
+              name="openingBalance"
+              label="Opening Balance"
+              type="number"
+            />
+            <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={() => navigate("/clients")}
+                className="btn btn-outline"
+              >
+                <ArrowLeft size={18} />
+                Cancel
+              </button>
+              <button type="submit" className="btn btn-primary">
+                <UserPlus size={18} />
+                Add Client
+              </button>
+            </div>
+          </Form>
         </div>
       </div>
     </div>

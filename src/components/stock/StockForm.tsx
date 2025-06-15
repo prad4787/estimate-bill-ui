@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Save, X } from 'lucide-react';
-import { StockFormData, Stock } from '../../types';
+import React, { useState, useEffect } from "react";
+import { Save, X } from "lucide-react";
+import { StockFormData, Stock } from "../../types";
 
 interface StockFormProps {
   initialData?: Stock;
@@ -8,14 +8,15 @@ interface StockFormProps {
   isSubmitting: boolean;
 }
 
-const StockForm: React.FC<StockFormProps> = ({ 
-  initialData, 
-  onSubmit, 
-  isSubmitting 
+const StockForm: React.FC<StockFormProps> = ({
+  initialData,
+  onSubmit,
+  isSubmitting,
 }) => {
   const [formData, setFormData] = useState<StockFormData>({
-    name: '',
-    quantity: '',
+    name: "",
+    quantity: "",
+    status: "tracked",
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -24,34 +25,37 @@ const StockForm: React.FC<StockFormProps> = ({
     if (initialData) {
       setFormData({
         name: initialData.name,
-        quantity: initialData.quantity?.toString() || '',
+        quantity: initialData.quantity?.toString() || "",
+        status: initialData.status,
       });
     }
   }, [initialData]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.name.trim()) {
-      newErrors.name = 'Stock name is required';
+      newErrors.name = "Stock name is required";
     }
-    
+
     if (formData.quantity && isNaN(Number(formData.quantity))) {
-      newErrors.quantity = 'Quantity must be a number';
+      newErrors.quantity = "Quantity must be a number";
     }
-    
+
     if (formData.quantity && Number(formData.quantity) < 0) {
-      newErrors.quantity = 'Quantity cannot be negative';
+      newErrors.quantity = "Quantity cannot be negative";
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    
+
     // Clear error when field is edited
     if (errors[name]) {
       setErrors((prev) => {
@@ -64,7 +68,7 @@ const StockForm: React.FC<StockFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (validateForm()) {
       onSubmit(formData);
     }
@@ -84,13 +88,36 @@ const StockForm: React.FC<StockFormProps> = ({
               name="name"
               value={formData.name}
               onChange={handleChange}
-              className={`form-input ${errors.name ? 'error' : ''}`}
+              className={`form-input ${errors.name ? "error" : ""}`}
               placeholder="Enter stock item name"
             />
             {errors.name && (
               <p className="mt-2 text-sm text-red-600 flex items-center">
                 <X size={14} className="mr-1" />
                 {errors.name}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label htmlFor="status" className="form-label">
+              Status
+            </label>
+            <select
+              id="status"
+              name="status"
+              value={formData.status}
+              onChange={handleChange}
+              className="form-input"
+              disabled={!formData.quantity}
+            >
+              <option value="tracked">Tracked</option>
+              <option value="untracked">Untracked</option>
+            </select>
+            {!formData.quantity && (
+              <p className="mt-2 text-sm text-gray-500">
+                Status will be automatically set to "Untracked" when quantity is
+                empty
               </p>
             )}
           </div>
@@ -107,10 +134,10 @@ const StockForm: React.FC<StockFormProps> = ({
               name="quantity"
               value={formData.quantity}
               onChange={handleChange}
-              className={`form-input ${errors.quantity ? 'error' : ''}`}
+              className={`form-input ${errors.quantity ? "error" : ""}`}
               placeholder="Enter quantity (optional)"
               min="0"
-              step="1"
+              step="0.01"
             />
             {errors.quantity && (
               <p className="mt-2 text-sm text-red-600 flex items-center">
@@ -124,7 +151,7 @@ const StockForm: React.FC<StockFormProps> = ({
           </div>
         </div>
       </div>
-      
+
       <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
         <button
           type="button"
@@ -148,7 +175,7 @@ const StockForm: React.FC<StockFormProps> = ({
           ) : (
             <>
               <Save size={18} />
-              {initialData ? 'Update Stock' : 'Add Stock'}
+              {initialData ? "Update Stock" : "Add Stock"}
             </>
           )}
         </button>

@@ -182,6 +182,7 @@ export interface Stock {
   id: string;
   name: string;
   quantity: number | null;
+  status: "tracked" | "untracked";
   createdAt: string;
   updatedAt: string;
 }
@@ -189,6 +190,7 @@ export interface Stock {
 export interface StockFormData {
   name: string;
   quantity: string;
+  status?: "tracked" | "untracked";
 }
 
 export interface Pagination {

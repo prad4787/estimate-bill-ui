@@ -1,103 +1,128 @@
-import { create } from 'zustand';
-import { Stock, StockFormData } from '../types';
-
-const STORAGE_KEY = 'billmanager-stock';
+import { create } from "zustand";
+import { Stock, StockFormData, ApiError, Pagination } from "../types";
+import { api } from "../api/instance";
 
 interface StockState {
   stocks: Stock[];
   loading: boolean;
   error: string | null;
-  fetchStocks: () => void;
-  addStock: (stock: Omit<Stock, 'id' | 'createdAt' | 'updatedAt'>) => string;
-  updateStock: (id: string, stock: Partial<Stock>) => void;
-  deleteStock: (id: string) => void;
-  getStock: (id: string) => Stock | undefined;
+  pagination: Pagination | null;
+  stats: {
+    total: number;
+    tracked: number;
+    untracked: number;
+    lowStock: number;
+    outOfStock: number;
+  } | null;
+  fetchStocks: (
+    search?: string,
+    page?: number,
+    limit?: number
+  ) => Promise<void>;
+  fetchStockStats: () => Promise<void>;
+  addStock: (stock: StockFormData) => Promise<Stock>;
+  updateStock: (id: string, stock: Partial<Stock>) => Promise<Stock | null>;
+  deleteStock: (id: string) => Promise<boolean>;
+  getStock: (id: string) => Promise<Stock | null>;
 }
-
-// Load stocks from localStorage
-const loadStocks = (): Stock[] => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch (error) {
-    console.error('Failed to load stocks from localStorage', error);
-    return [];
-  }
-};
-
-// Save stocks to localStorage
-const saveStocks = (stocks: Stock[]): void => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(stocks));
-  } catch (error) {
-    console.error('Failed to save stocks to localStorage', error);
-  }
-};
 
 export const useStockStore = create<StockState>((set, get) => ({
   stocks: [],
   loading: false,
   error: null,
-  
-  fetchStocks: () => {
+  pagination: null,
+  stats: null,
+
+  fetchStocks: async (search = "", page = 1, limit = 10) => {
     set({ loading: true, error: null });
     try {
-      const stocks = loadStocks();
-      set({ stocks, loading: false });
-    } catch (error) {
-      set({ error: 'Failed to fetch stocks', loading: false });
+      const res = await api.get<Stock[]>(
+        `/stocks?search=${search}&page=${page}&limit=${limit}`
+      );
+      set({
+        stocks: res.data,
+        pagination: res.pagination,
+        loading: false,
+      });
+    } catch (error: unknown) {
+      let message = "Failed to fetch stocks";
+      if (
+        error &&
+        typeof error === "object" &&
+        "message" in error &&
+        typeof (error as { message?: unknown }).message === "string"
+      ) {
+        message = (error as { message: string }).message;
+      }
+      set({ error: message, loading: false });
     }
   },
-  
-  addStock: (stockData) => {
-    const now = new Date().toISOString();
-    const id = `stock_${Date.now()}`;
-    
-    const newStock: Stock = {
-      id,
-      ...stockData,
-      createdAt: now,
-      updatedAt: now,
-    };
-    
-    set((state) => {
-      const updatedStocks = [...state.stocks, newStock];
-      saveStocks(updatedStocks);
-      return { stocks: updatedStocks };
-    });
-    
-    return id;
-  },
-  
-  updateStock: (id, stockData) => {
-    set((state) => {
-      const index = state.stocks.findIndex((stock) => stock.id === id);
-      
-      if (index === -1) {
-        return { error: `Stock with ID ${id} not found` };
+
+  fetchStockStats: async () => {
+    try {
+      const res = await api.get<{
+        total: number;
+        tracked: number;
+        untracked: number;
+        lowStock: number;
+        outOfStock: number;
+      }>("/stocks/stats");
+      set({ stats: res.data });
+    } catch (error: unknown) {
+      let message = "Failed to fetch stock stats";
+      if (
+        error &&
+        typeof error === "object" &&
+        "message" in error &&
+        typeof (error as { message?: unknown }).message === "string"
+      ) {
+        message = (error as { message: string }).message;
       }
-      
-      const updatedStocks = [...state.stocks];
-      updatedStocks[index] = {
-        ...updatedStocks[index],
-        ...stockData,
-        updatedAt: new Date().toISOString(),
-      };
-      
-      saveStocks(updatedStocks);
-      return { stocks: updatedStocks };
-    });
+      set({ error: message });
+    }
   },
-  
-  deleteStock: (id) => {
-    set((state) => {
-      const updatedStocks = state.stocks.filter((stock) => stock.id !== id);
-      saveStocks(updatedStocks);
-      return { stocks: updatedStocks };
-    });
+
+  addStock: async (stockData): Promise<Stock> => {
+    try {
+      const res = await api.post<Stock, StockFormData>("/stocks", stockData);
+      set((state) => ({ stocks: [...state.stocks, res.data] }));
+      return res.data;
+    } catch (error: unknown) {
+      throw error as ApiError;
+    }
   },
-  
-  getStock: (id) => {
-    return get().stocks.find((stock) => stock.id === id);
+
+  updateStock: async (id, stockData) => {
+    try {
+      const res = await api.put<Stock, Partial<Stock>>(
+        `/stocks/${id}`,
+        stockData
+      );
+      set((state) => ({
+        stocks: state.stocks.map((s) => (s.id === id ? res.data : s)),
+      }));
+      return res.data;
+    } catch {
+      return null;
+    }
+  },
+
+  deleteStock: async (id) => {
+    try {
+      await api.delete(`/stocks/${id}`);
+      set((state) => ({ stocks: state.stocks.filter((s) => s.id !== id) }));
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
+  getStock: async (id) => {
+    try {
+      const res = await api.get<Stock>(`/stocks/${id}`);
+      return res.data;
+    } catch {
+      return null;
+    }
   },
 }));

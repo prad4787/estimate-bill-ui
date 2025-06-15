@@ -8,13 +8,16 @@ interface ClientState {
   error: string | null;
   viewMode: "grid" | "list";
   pagination: Pagination | null;
+  currentClient: Client | null;
+  currentClientLoading: boolean;
+  currentClientError: string | null;
   fetchClients: () => Promise<void>;
   addClient: (
     client: Omit<Client, "id" | "createdAt" | "updatedAt">
   ) => Promise<Client>;
   updateClient: (id: string, client: Partial<Client>) => Promise<Client | null>;
   deleteClient: (id: string) => Promise<boolean>;
-  getClient: (id: string) => Client | undefined;
+  getClient: (id: string) => Promise<Client | null>;
   setViewMode: (mode: "grid" | "list") => void;
 }
 
@@ -35,6 +38,9 @@ export const useClientStore = create<ClientState>((set, get) => ({
   error: null,
   viewMode: loadViewPreference(),
   pagination: null,
+  currentClient: null,
+  currentClientLoading: false,
+  currentClientError: null,
 
   fetchClients: async (
     search: string = "",
@@ -104,8 +110,25 @@ export const useClientStore = create<ClientState>((set, get) => ({
     }
   },
 
-  getClient: (id) => {
-    return get().clients.find((client) => client.id === id);
+  getClient: async (id: string): Promise<Client | null> => {
+    set({ currentClientLoading: true, currentClientError: null });
+    try {
+      const res = await api.get<Client>(`/clients/${id}`);
+      set({ currentClient: res.data, currentClientLoading: false });
+      return res.data;
+    } catch (error: unknown) {
+      let message = "Failed to fetch client";
+      if (
+        error &&
+        typeof error === "object" &&
+        "message" in error &&
+        typeof (error as { message?: unknown }).message === "string"
+      ) {
+        message = (error as { message: string }).message;
+      }
+      set({ currentClientError: message, currentClientLoading: false });
+      return null;
+    }
   },
 
   setViewMode: (mode) => {

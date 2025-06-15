@@ -1,85 +1,72 @@
-import { create } from 'zustand';
-import { OrganizationInfo } from '../types';
-
-const STORAGE_KEY = 'billmanager-organization';
+import { create } from "zustand";
+import { OrganizationInfo } from "../types";
+import { api } from "../api/instance";
 
 interface OrganizationState {
-  organization: OrganizationInfo;
+  organization: OrganizationInfo | null;
   loading: boolean;
   error: string | null;
-  fetchOrganization: () => void;
-  updateOrganization: (data: Partial<OrganizationInfo>) => void;
+  fetchOrganization: () => Promise<void>;
+  updateOrganization: (
+    data: Partial<OrganizationInfo & { phones?: string[]; emails?: string[] }>
+  ) => Promise<void>;
   uploadLogo: (file: File) => Promise<string>;
 }
 
-// Default organization data
-const defaultOrganization: OrganizationInfo = {
-  name: 'Your Company Name',
-  address: 'Your Company Address',
-  phones: ['+1 (555) 123-4567'],
-  emails: ['info@yourcompany.com'],
-  website: 'www.yourcompany.com',
-  taxId: 'TAX123456789',
-  registrationNumber: 'REG123456789'
-};
-
-// Load organization from localStorage
-const loadOrganization = (): OrganizationInfo => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? { ...defaultOrganization, ...JSON.parse(stored) } : defaultOrganization;
-  } catch (error) {
-    console.error('Failed to load organization from localStorage', error);
-    return defaultOrganization;
-  }
-};
-
-// Save organization to localStorage
-const saveOrganization = (organization: OrganizationInfo): void => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(organization));
-  } catch (error) {
-    console.error('Failed to save organization to localStorage', error);
-  }
-};
-
-export const useOrganizationStore = create<OrganizationState>((set, get) => ({
-  organization: defaultOrganization,
+export const useOrganizationStore = create<OrganizationState>((set) => ({
+  organization: null,
   loading: false,
   error: null,
 
-  fetchOrganization: () => {
+  fetchOrganization: async () => {
     set({ loading: true, error: null });
     try {
-      const organization = loadOrganization();
-      set({ organization, loading: false });
-    } catch (error) {
-      set({ error: 'Failed to fetch organization data', loading: false });
+      const res = await api.get<OrganizationInfo>("/organization");
+      set({ organization: res.data, loading: false });
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch organization data";
+      set({ error: message, loading: false });
     }
   },
 
-  updateOrganization: (data) => {
-    const currentOrg = get().organization;
-    const updatedOrg = { ...currentOrg, ...data };
-    
-    set({ organization: updatedOrg });
-    saveOrganization(updatedOrg);
+  updateOrganization: async (data) => {
+    set({ loading: true, error: null });
+    try {
+      const res = await api.put<OrganizationInfo, Partial<OrganizationInfo>>(
+        "/organization",
+        data
+      );
+      set({ organization: res.data, loading: false });
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to update organization";
+      set({ error: message, loading: false });
+      throw error;
+    }
   },
 
-  uploadLogo: async (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        const currentOrg = get().organization;
-        const updatedOrg = { ...currentOrg, logo: result };
-        
-        set({ organization: updatedOrg });
-        saveOrganization(updatedOrg);
-        resolve(result);
-      };
-      reader.onerror = () => reject(new Error('Failed to read file'));
-      reader.readAsDataURL(file);
-    });
+  uploadLogo: async (file: File) => {
+    const formData = new FormData();
+    formData.append("logo", file);
+    try {
+      const res = await api.post("/organization/logo", formData);
+      const data = res.data as { logoUrl: string };
+      set((state) => ({
+        organization: state.organization
+          ? { ...state.organization, logo: data.logoUrl }
+          : state.organization,
+      }));
+      return data.logoUrl;
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Failed to upload logo";
+      set({ error: message });
+      throw error;
+    }
   },
 }));

@@ -1,101 +1,175 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Edit2, FileText, MapPin, Calendar, Plus, Eye, Download, Printer } from 'lucide-react';
-import { useClientStore } from '../../store/clientStore';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import {
+  ArrowLeft,
+  Edit2,
+  FileText,
+  MapPin,
+  Calendar,
+  Download,
+  Printer,
+  Search,
+} from "lucide-react";
+import { useClientStore } from "../../store/clientStore";
+import { api } from "../../api";
+import toast from "react-hot-toast";
+import ConfirmDialog from "../../components/ui/ConfirmDialog";
 
 interface JournalEntry {
   id: string;
   date: string;
   particular: string;
-  type: 'bill' | 'receipt';
+  type: "bill" | "receipt";
+  amount: number;
   dr: number;
   cr: number;
   balance: number;
+  reference?: string;
+  notes?: string;
 }
 
 const ViewClient: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getClient, fetchClients } = useClientStore();
+  const { getClient, currentClient, currentClientLoading, currentClientError } =
+    useClientStore();
   const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'bill' | 'receipt'>('all');
-  
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState<"all" | "bill" | "receipt">(
+    "all"
+  );
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
+
   const ITEMS_PER_PAGE = 15;
 
   useEffect(() => {
-    fetchClients();
-  }, [fetchClients]);
+    const loadData = async () => {
+      if (!id) return;
 
-  const client = id ? getClient(id) : undefined;
+      try {
+        setIsLoading(true);
+        setError(null);
+        await getClient(id);
+        await fetchJournalEntries();
+      } catch (err) {
+        setError("Failed to load client data");
+        console.error("Error loading client data:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  // Mock journal data - in real app, this would come from API
-  const generateMockJournalData = (openingBalance: number): JournalEntry[] => {
-    const entries: JournalEntry[] = [];
-    let runningBalance = openingBalance;
+    loadData();
+  }, [id, getClient]);
 
-    // Opening balance entry
-    entries.push({
-      id: 'opening',
-      date: '2024-01-01',
-      particular: 'Opening Balance',
-      type: 'bill',
-      dr: openingBalance > 0 ? openingBalance : 0,
-      cr: openingBalance < 0 ? Math.abs(openingBalance) : 0,
-      balance: runningBalance
-    });
+  const fetchJournalEntries = async () => {
+    if (!id) return;
 
-    // Generate 20 mock transactions
-    const mockTransactions = [
-      { date: '2024-01-15', particular: 'EST/2024/0001 - Website Development', type: 'bill' as const, amount: 2500 },
-      { date: '2024-01-20', particular: 'RCP/2024/0001 - Payment Received', type: 'receipt' as const, amount: 1000 },
-      { date: '2024-02-05', particular: 'EST/2024/0002 - Mobile App Design', type: 'bill' as const, amount: 3200 },
-      { date: '2024-02-12', particular: 'RCP/2024/0002 - Partial Payment', type: 'receipt' as const, amount: 1500 },
-      { date: '2024-02-28', particular: 'EST/2024/0003 - Database Setup', type: 'bill' as const, amount: 800 },
-      { date: '2024-03-10', particular: 'RCP/2024/0003 - Payment Received', type: 'receipt' as const, amount: 2000 },
-      { date: '2024-03-15', particular: 'EST/2024/0004 - API Integration', type: 'bill' as const, amount: 1800 },
-      { date: '2024-03-22', particular: 'RCP/2024/0004 - Cash Payment', type: 'receipt' as const, amount: 800 },
-      { date: '2024-04-01', particular: 'EST/2024/0005 - UI/UX Consulting', type: 'bill' as const, amount: 1200 },
-      { date: '2024-04-08', particular: 'RCP/2024/0005 - Bank Transfer', type: 'receipt' as const, amount: 1800 },
-      { date: '2024-04-20', particular: 'EST/2024/0006 - Security Audit', type: 'bill' as const, amount: 2200 },
-      { date: '2024-05-02', particular: 'RCP/2024/0006 - Payment Received', type: 'receipt' as const, amount: 1200 },
-      { date: '2024-05-15', particular: 'EST/2024/0007 - Performance Optimization', type: 'bill' as const, amount: 1500 },
-      { date: '2024-05-25', particular: 'RCP/2024/0007 - Cheque Payment', type: 'receipt' as const, amount: 2200 },
-      { date: '2024-06-05', particular: 'EST/2024/0008 - Maintenance Contract', type: 'bill' as const, amount: 3000 },
-      { date: '2024-06-12', particular: 'RCP/2024/0008 - Advance Payment', type: 'receipt' as const, amount: 1500 },
-      { date: '2024-06-28', particular: 'EST/2024/0009 - Training Services', type: 'bill' as const, amount: 900 },
-      { date: '2024-07-08', particular: 'RCP/2024/0009 - Payment Received', type: 'receipt' as const, amount: 3000 },
-      { date: '2024-07-20', particular: 'EST/2024/0010 - Documentation', type: 'bill' as const, amount: 600 },
-      { date: '2024-07-30', particular: 'RCP/2024/0010 - Final Payment', type: 'receipt' as const, amount: 900 }
-    ];
-
-    mockTransactions.forEach((transaction, index) => {
-      const dr = transaction.type === 'bill' ? transaction.amount : 0;
-      const cr = transaction.type === 'receipt' ? transaction.amount : 0;
-      runningBalance += dr - cr;
-
-      entries.push({
-        id: `entry-${index + 1}`,
-        date: transaction.date,
-        particular: transaction.particular,
-        type: transaction.type,
-        dr,
-        cr,
-        balance: runningBalance
+    try {
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: ITEMS_PER_PAGE.toString(),
       });
-    });
 
-    return entries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      if (filterType !== "all") {
+        params.append("type", filterType);
+      }
+
+      if (startDate) {
+        params.append("startDate", startDate);
+      }
+
+      if (endDate) {
+        params.append("endDate", endDate);
+      }
+
+      // const response = await api.get(
+      //   `/journal/clients/${id}/entries?${params}`
+      // );
+      setJournalEntries([]);
+      setTotalPages(0);
+    } catch (err) {
+      toast.error("Failed to load journal entries");
+      console.error("Error loading journal entries:", err);
+    }
   };
 
-  if (!client) {
+  useEffect(() => {
+    fetchJournalEntries();
+  }, [currentPage, filterType, startDate, endDate]);
+
+  const handleDeleteEntry = async (entryId: string) => {
+    setEntryToDelete(entryId);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!entryToDelete) return;
+
+    try {
+      await api.delete(`/journal/entries/${entryToDelete}`);
+      toast.success("Journal entry deleted successfully");
+      fetchJournalEntries();
+    } catch (err) {
+      toast.error("Failed to delete journal entry");
+      console.error("Error deleting journal entry:", err);
+    } finally {
+      setEntryToDelete(null);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setEntryToDelete(null);
+  };
+
+  if (isLoading || currentClientLoading) {
+    return (
+      <div className="space-y-8 animate-fade-in">
+        <div>
+          <button
+            onClick={() => navigate("/clients")}
+            className="inline-flex items-center text-gray-600 mb-6"
+          >
+            <ArrowLeft size={18} className="mr-2" />
+            Back to Clients
+          </button>
+
+          <div className="page-header">
+            <div>
+              <h1 className="page-title">Loading...</h1>
+              <p className="text-gray-600 mt-2">
+                Please wait while we load the client data.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-body text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="text-gray-500 mt-4">Loading client data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentClient || currentClientError) {
     return (
       <div className="space-y-8 animate-fade-in">
         <div className="text-center py-16">
           <h2 className="text-2xl font-semibold mb-4">Client Not Found</h2>
-          <p className="text-gray-500 mb-8">The client you're looking for doesn't exist or has been removed.</p>
-          <button 
-            onClick={() => navigate('/clients')}
+          <p className="text-gray-500 mb-8">
+            {currentClientError ||
+              "The client you're looking for doesn't exist or has been removed."}
+          </p>
+          <button
+            onClick={() => navigate("/clients")}
             className="btn btn-primary"
           >
             Back to Clients
@@ -105,55 +179,56 @@ const ViewClient: React.FC = () => {
     );
   }
 
-  const journalEntries = generateMockJournalData(client.openingBalance);
-
-  // Filter entries based on search and type
-  const filteredEntries = journalEntries.filter(entry => {
-    const matchesSearch = entry.particular.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = filterType === 'all' || entry.type === filterType || entry.particular === 'Opening Balance';
-    return matchesSearch && matchesType;
-  });
-
-  const totalPages = Math.ceil(filteredEntries.length / ITEMS_PER_PAGE);
-  const paginatedEntries = filteredEntries.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+  // Filter entries based on search
+  const filteredEntries = journalEntries.filter(
+    (entry) =>
+      entry.particular.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (entry.reference &&
+        entry.reference.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (entry.notes &&
+        entry.notes.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
     }).format(amount);
   };
 
-  const currentBalance = journalEntries[journalEntries.length - 1]?.balance || client.openingBalance;
+  const currentBalance =
+    journalEntries[0]?.balance || currentClient.openingBalance;
   const totalBills = journalEntries.reduce((sum, entry) => sum + entry.dr, 0);
-  const totalReceipts = journalEntries.reduce((sum, entry) => sum + entry.cr, 0);
+  const totalReceipts = journalEntries.reduce(
+    (sum, entry) => sum + entry.cr,
+    0
+  );
 
   return (
     <div className="space-y-8 animate-fade-in">
       <div>
-        <button 
-          onClick={() => navigate('/clients')}
+        <button
+          onClick={() => navigate("/clients")}
           className="inline-flex items-center text-gray-600 mb-6"
         >
           <ArrowLeft size={18} className="mr-2" />
           Back to Clients
         </button>
-        
+
         <div className="page-header">
           <div>
-            <h1 className="page-title">{client.name}</h1>
-            <p className="text-gray-600 mt-2">Complete transaction history and account details</p>
+            <h1 className="page-title">{currentClient.name}</h1>
+            <p className="text-gray-600 mt-2">
+              Complete transaction history and account details
+            </p>
           </div>
           <div className="flex gap-3">
             <button className="btn btn-outline">
@@ -164,7 +239,10 @@ const ViewClient: React.FC = () => {
               <Printer size={18} />
               Print
             </button>
-            <Link to={`/clients/edit/${client.id}`} className="btn btn-primary">
+            <Link
+              to={`/clients/edit/${currentClient.id}`}
+              className="btn btn-primary"
+            >
               <Edit2 size={18} />
               Edit Client
             </Link>
@@ -172,10 +250,22 @@ const ViewClient: React.FC = () => {
         </div>
       </div>
 
+      {error && (
+        <div className="card">
+          <div className="card-body">
+            <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-red-600">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Client Information Card */}
       <div className="card">
         <div className="card-header">
-          <h2 className="text-xl font-semibold text-gray-900">Client Information</h2>
+          <h2 className="text-xl font-semibold text-gray-900">
+            Client Information
+          </h2>
         </div>
         <div className="card-body">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -185,226 +275,256 @@ const ViewClient: React.FC = () => {
                 <span className="text-sm font-medium">Client Since</span>
               </div>
               <p className="text-lg font-semibold text-gray-900">
-                {formatDate(client.createdAt)}
+                {formatDate(currentClient.createdAt)}
               </p>
             </div>
 
-            {client.address && (
+            {currentClient.address && (
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-gray-600">
                   <MapPin size={16} />
                   <span className="text-sm font-medium">Address</span>
                 </div>
-                <p className="text-gray-900">{client.address}</p>
+                <p className="text-gray-900">{currentClient.address}</p>
               </div>
             )}
 
-            {client.panVat && (
+            {currentClient.panVat && (
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-gray-600">
                   <FileText size={16} />
                   <span className="text-sm font-medium">PAN/VAT</span>
                 </div>
-                <p className="text-gray-900 font-mono">{client.panVat}</p>
+                <p className="text-gray-900">{currentClient.panVat}</p>
               </div>
             )}
 
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-gray-600">
-                <span className="text-sm font-medium">Client ID</span>
+                <FileText size={16} />
+                <span className="text-sm font-medium">Current Balance</span>
               </div>
-              <p className="text-gray-900 font-mono text-sm">{client.id}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Account Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="stats-card">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Current Balance</p>
-              <h3 className={`text-3xl font-bold ${currentBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatCurrency(Math.abs(currentBalance))}
-              </h3>
-              <p className="text-sm text-gray-500 mt-1">
-                {currentBalance >= 0 ? 'Credit Balance' : 'Debit Balance'}
+              <p
+                className={`text-lg font-semibold ${
+                  currentBalance >= 0 ? "text-green-600" : "text-red-600"
+                }`}
+              >
+                {formatCurrency(currentBalance)}
               </p>
             </div>
-            <div className={`stats-icon ${currentBalance >= 0 ? 'bg-gradient-to-br from-green-500 to-green-600' : 'bg-gradient-to-br from-red-500 to-red-600'} text-white`}>
-              <FileText size={24} />
-            </div>
-          </div>
-        </div>
-
-        <div className="stats-card">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Total Billed</p>
-              <h3 className="text-3xl font-bold text-gray-900">{formatCurrency(totalBills)}</h3>
-              <p className="text-sm text-gray-500 mt-1">All time bills</p>
-            </div>
-            <div className="stats-icon bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-              <Plus size={24} />
-            </div>
-          </div>
-        </div>
-
-        <div className="stats-card">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Total Received</p>
-              <h3 className="text-3xl font-bold text-gray-900">{formatCurrency(totalReceipts)}</h3>
-              <p className="text-sm text-gray-500 mt-1">All time receipts</p>
-            </div>
-            <div className="stats-icon bg-gradient-to-br from-purple-500 to-purple-600 text-white">
-              <FileText size={24} />
-            </div>
-          </div>
-        </div>
-
-        <div className="stats-card">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Transactions</p>
-              <h3 className="text-3xl font-bold text-gray-900">{journalEntries.length}</h3>
-              <p className="text-sm text-gray-500 mt-1">Total entries</p>
-            </div>
-            <div className="stats-icon bg-gradient-to-br from-indigo-500 to-indigo-600 text-white">
-              <Eye size={24} />
-            </div>
           </div>
         </div>
       </div>
 
-      {/* Journal Table */}
+      {/* Journal Entries */}
       <div className="card">
         <div className="card-header">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h2 className="text-xl font-semibold text-gray-900">Account Journal</h2>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative">
+          <h2 className="text-xl font-semibold text-gray-900">
+            Transaction History
+          </h2>
+        </div>
+        <div className="card-body">
+          <div className="space-y-6">
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative flex-1">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Search size={20} className="text-gray-400" />
+                </div>
                 <input
                   type="text"
                   placeholder="Search transactions..."
-                  className="form-input pl-10 w-full sm:w-64"
+                  className="form-input pl-12 border-gray-300 w-full"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Eye size={18} className="text-gray-400" />
+              </div>
+              <div className="flex gap-3">
+                <select
+                  className="form-select border-gray-300"
+                  value={filterType}
+                  onChange={(e) =>
+                    setFilterType(e.target.value as "all" | "bill" | "receipt")
+                  }
+                >
+                  <option value="all">All Transactions</option>
+                  <option value="bill">Bills Only</option>
+                  <option value="receipt">Receipts Only</option>
+                </select>
+                <div className="flex gap-2">
+                  <input
+                    type="date"
+                    className="form-input border-gray-300"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    placeholder="Start Date"
+                  />
+                  <input
+                    type="date"
+                    className="form-input border-gray-300"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    placeholder="End Date"
+                  />
                 </div>
               </div>
-              <select
-                className="form-input w-full sm:w-auto"
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value as 'all' | 'bill' | 'receipt')}
-              >
-                <option value="all">All Transactions</option>
-                <option value="bill">Bills Only</option>
-                <option value="receipt">Receipts Only</option>
-              </select>
             </div>
-          </div>
-        </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="table-header">
-              <tr>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Particular</th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Dr (Bills)</th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Cr (Receipts)</th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Balance</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {paginatedEntries.map((entry, index) => (
-                <tr 
-                  key={entry.id} 
-                  className={`table-row animate-slide-in ${entry.particular === 'Opening Balance' ? 'bg-blue-50' : ''}`}
-                  style={{ animationDelay: `${index * 50}ms` }}
-                >
-                  <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                    {formatDate(entry.date)}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      {entry.particular === 'Opening Balance' ? (
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                          <span className="font-semibold text-blue-700">{entry.particular}</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${entry.type === 'bill' ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                          <span className="text-gray-900">{entry.particular}</span>
-                          <span className={`badge ${entry.type === 'bill' ? 'badge-danger' : 'badge-success'}`}>
-                            {entry.type === 'bill' ? 'Bill' : 'Receipt'}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right text-sm">
-                    {entry.dr > 0 ? (
-                      <span className="font-semibold text-red-600">{formatCurrency(entry.dr)}</span>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-right text-sm">
-                    {entry.cr > 0 ? (
-                      <span className="font-semibold text-green-600">{formatCurrency(entry.cr)}</span>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-right text-sm">
-                    <span className={`font-bold ${entry.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {formatCurrency(Math.abs(entry.balance))}
-                      <span className="text-xs ml-1 text-gray-500">
-                        {entry.balance >= 0 ? 'Cr' : 'Dr'}
-                      </span>
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {totalPages > 1 && (
-          <div className="card-footer">
-            <div className="flex justify-between items-center">
-              <div className="text-sm text-gray-600">
-                Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, filteredEntries.length)} of {filteredEntries.length} entries
+            {/* Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-600">Total Bills</p>
+                <p className="text-xl font-semibold text-red-600">
+                  {formatCurrency(totalBills)}
+                </p>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className="btn btn-outline btn-sm"
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-600">Total Receipts</p>
+                <p className="text-xl font-semibold text-green-600">
+                  {formatCurrency(totalReceipts)}
+                </p>
+              </div>
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-600">Current Balance</p>
+                <p
+                  className={`text-xl font-semibold ${
+                    currentBalance >= 0 ? "text-green-600" : "text-red-600"
+                  }`}
                 >
-                  Previous
-                </button>
-                <span className="px-4 py-2 text-sm text-gray-700">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <button
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  className="btn btn-outline btn-sm"
-                >
-                  Next
-                </button>
+                  {formatCurrency(currentBalance)}
+                </p>
               </div>
             </div>
+
+            {/* Entries Table */}
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead>
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Particular
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Type
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Debit
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Credit
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Balance
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredEntries.map((entry) => (
+                    <tr key={entry.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {formatDate(entry.date)}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900">
+                        <div>
+                          <p className="font-medium">{entry.particular}</p>
+                          {entry.reference && (
+                            <p className="text-gray-500 text-xs">
+                              Ref: {entry.reference}
+                            </p>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            entry.type === "bill"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-green-100 text-green-800"
+                          }`}
+                        >
+                          {entry.type === "bill" ? "Bill" : "Receipt"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-red-600">
+                        {entry.dr > 0 ? formatCurrency(entry.dr) : "-"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-green-600">
+                        {entry.cr > 0 ? formatCurrency(entry.cr) : "-"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                        <span
+                          className={
+                            entry.balance >= 0
+                              ? "text-green-600"
+                              : "text-red-600"
+                          }
+                        >
+                          {formatCurrency(entry.balance)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button
+                          onClick={() => handleDeleteEntry(entry.id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center mt-6">
+                <nav
+                  className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                  aria-label="Pagination"
+                >
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <button
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(totalPages, p + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </nav>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={!!entryToDelete}
+        title="Delete Journal Entry"
+        message="Are you sure you want to delete this journal entry? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        variant="danger"
+      />
     </div>
   );
 };
