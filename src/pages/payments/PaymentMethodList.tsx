@@ -1,263 +1,270 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, CreditCard, DollarSign, FileText, Wallet, Building2, Edit2, Trash2 } from 'lucide-react';
-import PaymentMediumModal from '../../components/payment/PaymentMediumModal';
-import { PaymentMedium } from '../../types';
-import EmptyState from '../../components/ui/EmptyState';
-import toast from 'react-hot-toast';
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { Plus, Search, CreditCard, Eye, Pencil, Trash2 } from "lucide-react";
+import toast from "react-hot-toast";
+import { usePaymentMethodStore } from "../../store/paymentMethodStore";
+import EmptyState from "../../components/ui/EmptyState";
+import Pagination from "../../components/ui/Pagination";
+import ConfirmDialog from "../../components/ui/ConfirmDialog";
+
+const ITEMS_PER_PAGE = 10;
 
 const PaymentMethodList: React.FC = () => {
-  const [showModal, setShowModal] = useState(false);
-  const [editingMethod, setEditingMethod] = useState<PaymentMedium | null>(null);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMedium[]>([]);
+  const {
+    paymentMethods,
+    loading,
+    error,
+    pagination,
+    fetchPaymentMethods,
+    deletePaymentMethod,
+  } = usePaymentMethodStore();
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [methodToDelete, setMethodToDelete] = useState<string | null>(null);
 
   useEffect(() => {
-    // Load payment methods from localStorage
-    const stored = localStorage.getItem('billmanager-payment-methods');
-    if (stored) {
-      setPaymentMethods(JSON.parse(stored));
-    } else {
-      // Initialize with default methods
-      const defaultMethods: PaymentMedium[] = [
-        { type: 'cash', balance: 0 },
-        { type: 'cheque' }
-      ];
-      setPaymentMethods(defaultMethods);
-      localStorage.setItem('billmanager-payment-methods', JSON.stringify(defaultMethods));
-    }
-  }, []);
+    fetchPaymentMethods(currentPage, ITEMS_PER_PAGE);
+  }, [fetchPaymentMethods, currentPage]);
 
-  const savePaymentMethods = (methods: PaymentMedium[]) => {
-    setPaymentMethods(methods);
-    localStorage.setItem('billmanager-payment-methods', JSON.stringify(methods));
+  const handleDeleteClick = (id: string) => {
+    setMethodToDelete(id);
   };
 
-  const handleSave = (payment: PaymentMedium) => {
-    if (editingMethod) {
-      // Update existing method
-      const updatedMethods = paymentMethods.map(method => 
-        method === editingMethod ? payment : method
-      );
-      savePaymentMethods(updatedMethods);
-      toast.success('Payment method updated successfully');
-      setEditingMethod(null);
-    } else {
-      // Add new method
-      const updatedMethods = [...paymentMethods, payment];
-      savePaymentMethods(updatedMethods);
-      toast.success('Payment method added successfully');
-    }
-    setShowModal(false);
-  };
+  const handleDeleteConfirm = async () => {
+    if (!methodToDelete) return;
 
-  const handleEdit = (method: PaymentMedium) => {
-    setEditingMethod(method);
-    setShowModal(true);
-  };
-
-  const handleDelete = (methodToDelete: PaymentMedium) => {
-    // Prevent deletion of default cash and cheque methods
-    if (methodToDelete.type === 'cash' || methodToDelete.type === 'cheque') {
-      toast.error('Cannot delete default payment methods');
-      return;
-    }
-
-    if (window.confirm('Are you sure you want to delete this payment method?')) {
-      const updatedMethods = paymentMethods.filter(method => method !== methodToDelete);
-      savePaymentMethods(updatedMethods);
-      toast.success('Payment method deleted successfully');
+    try {
+      await deletePaymentMethod(methodToDelete);
+      toast.success("Payment method deleted successfully");
+      fetchPaymentMethods(currentPage, ITEMS_PER_PAGE);
+    } catch (error) {
+      toast.error("Failed to delete payment method");
+      console.error("Error deleting payment method:", error);
+    } finally {
+      setMethodToDelete(null);
     }
   };
 
-  const getMethodIcon = (type: string) => {
-    switch (type) {
-      case 'cash':
-        return <DollarSign size={24} />;
-      case 'cheque':
-        return <FileText size={24} />;
-      case 'bank':
-        return <Building2 size={24} />;
-      case 'wallet':
-        return <Wallet size={24} />;
-      default:
-        return <CreditCard size={24} />;
-    }
-  };
-
-  const getMethodColor = (type: string) => {
-    switch (type) {
-      case 'cash':
-        return 'from-green-500 to-green-600';
-      case 'cheque':
-        return 'from-blue-500 to-blue-600';
-      case 'bank':
-        return 'from-purple-500 to-purple-600';
-      case 'wallet':
-        return 'from-indigo-500 to-indigo-600';
-      default:
-        return 'from-gray-500 to-gray-600';
-    }
+  const handleDeleteCancel = () => {
+    setMethodToDelete(null);
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
     }).format(amount);
   };
 
-  const renderPaymentDetails = (payment: PaymentMedium) => {
-    switch (payment.type) {
-      case 'cash':
-        return (
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Cash</h3>
-            <p className="text-sm text-gray-600 mb-3">Physical cash payments</p>
-            {payment.balance !== undefined && (
-              <div className="text-xl font-bold text-green-600">
-                {formatCurrency(payment.balance)}
-              </div>
-            )}
-          </div>
-        );
-      case 'cheque':
-        return (
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Cheque</h3>
-            <p className="text-sm text-gray-600">Bank cheque payments</p>
-          </div>
-        );
-      case 'wallet':
-        return (
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">{payment.walletName}</h3>
-            <p className="text-sm text-gray-600 mb-1">{payment.accountName}</p>
-            <p className="text-xs text-gray-500 mb-3 font-mono">{payment.accountNumber}</p>
-            {payment.balance !== undefined && (
-              <div className="text-xl font-bold text-indigo-600">
-                {formatCurrency(payment.balance)}
-              </div>
-            )}
-          </div>
-        );
-      case 'bank':
-        return (
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">{payment.bankName}</h3>
-            <p className="text-sm text-gray-600 mb-1">{payment.accountName}</p>
-            <p className="text-xs text-gray-500 mb-3 font-mono">{payment.accountNumber}</p>
-            {payment.balance !== undefined && (
-              <div className="text-xl font-bold text-purple-600">
-                {formatCurrency(payment.balance)}
-              </div>
-            )}
-          </div>
-        );
-    }
-  };
+  const filteredMethods = paymentMethods.filter(
+    (method) =>
+      (method.name?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      method.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (method.accountName &&
+        method.accountName.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
-  const canEdit = (method: PaymentMedium) => {
-    return method.type === 'cash' || method.type === 'bank' || method.type === 'wallet';
-  };
-
-  const canDelete = (method: PaymentMedium) => {
-    return method.type !== 'cash' && method.type !== 'cheque';
-  };
+  if (error) {
+    return (
+      <div className="card">
+        <div className="card-body text-center py-12">
+          <div className="text-red-500 mb-4">Error: {error}</div>
+          <button
+            onClick={() => fetchPaymentMethods(currentPage, ITEMS_PER_PAGE)}
+            className="btn btn-primary"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="page-header">
         <div>
           <h1 className="page-title">Payment Methods</h1>
-          <p className="text-gray-600 mt-2">Manage your payment methods and account balances.</p>
+          <p className="text-gray-600 mt-2">
+            Manage your payment methods and track their balances.
+          </p>
         </div>
-        <button
-          onClick={() => {
-            setEditingMethod(null);
-            setShowModal(true);
-          }}
-          className="btn btn-primary"
-        >
+        <Link to="/payments/add" className="btn btn-primary">
           <Plus size={18} />
           Add Payment Method
-        </button>
+        </Link>
       </div>
 
-      {paymentMethods.length === 0 ? (
-        <EmptyState
-          title="No payment methods"
-          description="Add your first payment method to get started."
-          icon={<CreditCard size={48} />}
-          action={
-            <button
-              onClick={() => setShowModal(true)}
-              className="btn btn-primary"
-            >
-              Add Payment Method
-            </button>
-          }
-        />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {paymentMethods.map((method, index) => (
-            <div key={index} className="card">
-              <div className="card-body">
-                <div className="flex items-start justify-between mb-4">
-                  <div className={`stats-icon bg-gradient-to-br ${getMethodColor(method.type)} text-white`}>
-                    {getMethodIcon(method.type)}
-                  </div>
-                  <div className="flex gap-1">
-                    {canEdit(method) && (
-                      <button
-                        onClick={() => handleEdit(method)}
-                        className="action-btn action-btn-primary"
-                        title="Edit payment method"
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                    )}
-                    {canDelete(method) && (
-                      <button
-                        onClick={() => handleDelete(method)}
-                        className="action-btn action-btn-danger"
-                        title="Delete payment method"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-                
-                {renderPaymentDetails(method)}
-                
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <div className="flex items-center justify-between">
-                    <span className={`badge ${
-                      method.type === 'cash' ? 'badge-success' :
-                      method.type === 'cheque' ? 'badge-primary' :
-                      method.type === 'bank' ? 'badge-warning' :
-                      'badge-secondary'
-                    }`}>
-                      {method.type.charAt(0).toUpperCase() + method.type.slice(1)}
-                    </span>
-                    {(method.type === 'cash' || method.type === 'cheque') && (
-                      <span className="text-xs text-gray-500 font-medium">Default</span>
-                    )}
-                  </div>
-                </div>
+      {paymentMethods.length > 0 && (
+        <div className="card">
+          <div className="card-body">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <Search size={20} className="text-gray-400" />
               </div>
+              <input
+                type="text"
+                placeholder="Search payment methods by name, type, or account..."
+                className="form-input pl-12 border-gray-300 w-full"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
-          ))}
+          </div>
         </div>
       )}
 
-      <PaymentMediumModal
-        isOpen={showModal}
-        onClose={() => {
-          setShowModal(false);
-          setEditingMethod(null);
-        }}
-        onSave={handleSave}
-        initialData={editingMethod}
+      {loading ? (
+        <div className="card">
+          <div className="card-body text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading payment methods...</p>
+          </div>
+        </div>
+      ) : paymentMethods.length === 0 ? (
+        <EmptyState
+          title="No payment methods found"
+          description="Add your first payment method to get started with payment tracking."
+          icon={<CreditCard size={64} />}
+          action={
+            <Link to="/payments/add" className="btn btn-primary">
+              <Plus size={18} />
+              Add Payment Method
+            </Link>
+          }
+        />
+      ) : filteredMethods.length === 0 ? (
+        <div className="card">
+          <div className="card-body text-center py-12">
+            <div className="empty-state-icon mx-auto mb-4">
+              <Search size={48} />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              No results found
+            </h3>
+            <p className="text-gray-500">
+              No payment methods match your search criteria. Try adjusting your
+              search terms.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="card">
+            <div className="table-container">
+              <table className="w-full">
+                <thead className="table-header">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                      Name
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                      Type
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                      Account Details
+                    </th>
+                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
+                      Balance
+                    </th>
+                    <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
+                      Status
+                    </th>
+                    <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredMethods.map((method) => (
+                    <tr key={method.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {method.name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {method.type.charAt(0).toUpperCase() +
+                          method.type.slice(1)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {method.accountName && (
+                          <div>
+                            <div>{method.accountName}</div>
+                            {method.accountNumber && (
+                              <div className="text-xs text-gray-400">
+                                {method.accountNumber}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                        {formatCurrency(method.balance || 0)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                        {method.isDefault ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Default
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            Active
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                        <div className="flex items-center justify-center space-x-3">
+                          <Link
+                            to={`/payments/${method.id}`}
+                            className="text-primary-600 hover:text-primary-900"
+                            title="View Details"
+                          >
+                            <Eye size={18} />
+                          </Link>
+                          <Link
+                            to={`/payments/${method.id}/edit`}
+                            className="text-blue-600 hover:text-blue-900"
+                            title="Edit"
+                          >
+                            <Pencil size={18} />
+                          </Link>
+                          <button
+                            onClick={() => handleDeleteClick(method.id)}
+                            className="text-red-600 hover:text-red-900"
+                            title="Delete"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {pagination && pagination.totalPages > 1 && (
+            <div className="mt-8">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={pagination.totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          )}
+        </>
+      )}
+
+      <ConfirmDialog
+        isOpen={!!methodToDelete}
+        title="Delete Payment Method"
+        message="Are you sure you want to delete this payment method? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        variant="danger"
       />
     </div>
   );

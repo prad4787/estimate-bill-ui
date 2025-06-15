@@ -11,6 +11,8 @@ import EstimateList from "./pages/estimates/EstimateList";
 import AddEstimate from "./pages/estimates/AddEstimate";
 import ViewEstimate from "./pages/estimates/ViewEstimate";
 import PaymentMethodList from "./pages/payments/PaymentMethodList";
+import AddPaymentMethod from "./pages/payments/AddPaymentMethod";
+import EditPaymentMethod from "./pages/payments/EditPaymentMethod";
 import ReceiptList from "./pages/receipts/ReceiptList";
 import AddReceipt from "./pages/receipts/AddReceipt";
 import EditReceipt from "./pages/receipts/EditReceipt";
@@ -54,7 +56,11 @@ function App() {
             <Route path="add" element={<AddStock />} />
             <Route path="edit/:id" element={<EditStock />} />
           </Route>
-          <Route path="payments" element={<PaymentMethodList />} />
+          <Route path="payments">
+            <Route index element={<PaymentMethodList />} />
+            <Route path="add" element={<AddPaymentMethod />} />
+            <Route path="edit/:id" element={<EditPaymentMethod />} />
+          </Route>
           <Route path="receipts">
             <Route index element={<ReceiptList />} />
             <Route path="add" element={<AddReceipt />} />

@@ -74,6 +74,10 @@ exports.uploadLogo = async (req, res, next) => {
       return res.apiError(err.message, 400);
     }
 
+    console.log({
+      file: req.files,
+    });
+
     if (!req.file) {
       return res.apiError("No file uploaded", 400);
     }

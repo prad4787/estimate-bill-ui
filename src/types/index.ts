@@ -48,7 +48,7 @@ export interface EstimateFormData {
   discountValue: number;
 }
 
-export type PaymentType = "cash" | "wallet" | "bank" | "cheque";
+export type PaymentType = "cash" | "bank" | "wallet" | "cheque";
 
 export interface BasePaymentMedium {
   type: PaymentType;
@@ -213,4 +213,25 @@ export interface ApiResponse<T> {
   message: string;
   data: T;
   pagination?: Pagination;
+}
+
+export interface PaymentMethod {
+  id: string;
+  type: PaymentType;
+  name?: string;
+  accountName?: string;
+  accountNumber?: string;
+  balance?: number;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaymentMethodFormData {
+  type: PaymentType;
+  name?: string;
+  accountName?: string;
+  accountNumber?: string;
+  balance?: string;
+  isDefault?: boolean;
 }
