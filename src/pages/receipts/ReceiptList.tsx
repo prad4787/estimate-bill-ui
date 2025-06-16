@@ -1,48 +1,79 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Plus, Receipt, Search, Printer, Edit2, Eye, Trash2 } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { useReceiptStore } from '../../store/receiptStore';
-import { useClientStore } from '../../store/clientStore';
-import { useOrganizationStore } from '../../store/organizationStore';
-import EmptyState from '../../components/ui/EmptyState';
-
-const ITEMS_PER_PAGE = 10;
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import {
+  Plus,
+  Receipt,
+  Search,
+  Printer,
+  Edit2,
+  Eye,
+  Trash2,
+} from "lucide-react";
+import toast from "react-hot-toast";
+import { useReceiptStore } from "../../store/receiptStore";
+import { useClientStore } from "../../store/clientStore";
+import { useOrganizationStore } from "../../store/organizationStore";
+import EmptyState from "../../components/ui/EmptyState";
+import {
+  Receipt as ReceiptType,
+  Client,
+  OrganizationInfo,
+  Transaction,
+} from "../../types";
 
 const ReceiptList: React.FC = () => {
-  const { receipts, fetchReceipts, deleteReceipt } = useReceiptStore();
+  const {
+    receipts,
+    loading,
+    error: receiptError,
+    pagination,
+    fetchReceipts,
+    deleteReceipt,
+  } = useReceiptStore();
   const { clients, fetchClients } = useClientStore();
   const { organization, fetchOrganization } = useOrganizationStore();
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  
+
   useEffect(() => {
-    fetchReceipts();
+    fetchReceipts({ page: currentPage });
     fetchClients();
     fetchOrganization();
-  }, [fetchReceipts, fetchClients, fetchOrganization]);
+  }, [fetchReceipts, fetchClients, fetchOrganization, currentPage]);
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this receipt?')) {
-      deleteReceipt(id);
-      toast.success('Receipt deleted successfully');
+  const handleDelete = async (id: string) => {
+    if (window.confirm("Are you sure you want to delete this receipt?")) {
+      try {
+        await deleteReceipt(id);
+        toast.success("Receipt deleted successfully");
+        // Refresh the current page
+        fetchReceipts({ page: currentPage });
+      } catch {
+        toast.error("Failed to delete receipt");
+      }
     }
   };
 
   const handlePrint = (receiptId: string) => {
-    const receipt = receipts.find(r => r.id === receiptId);
-    const client = receipt ? clients.find(c => c.id === receipt.clientId) : null;
-    
-    if (!receipt || !client) {
-      toast.error('Receipt or client data not found');
+    const receipt = receipts.find((r) => r.id === receiptId);
+    const client = receipt
+      ? clients.find((c) => c.id === receipt.clientId)
+      : null;
+
+    if (!receipt || !client || !organization) {
+      toast.error("Receipt, client, or organization data not found");
       return;
     }
 
     // Create thermal printer formatted content
-    const thermalContent = generateThermalReceipt(receipt, client, organization);
-    
+    const thermalContent = generateThermalReceipt(
+      receipt,
+      client,
+      organization
+    );
+
     // Create a new window for printing
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open("", "_blank");
     if (printWindow) {
       printWindow.document.write(thermalContent);
       printWindow.document.close();
@@ -52,14 +83,18 @@ const ReceiptList: React.FC = () => {
     }
   };
 
-  const generateThermalReceipt = (receipt: any, client: any, org: any) => {
+  const generateThermalReceipt = (
+    receipt: ReceiptType,
+    client: Client,
+    org: OrganizationInfo
+  ): string => {
     const formatDate = (dateString: string) => {
-      return new Date(dateString).toLocaleDateString('en-US', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
+      return new Date(dateString).toLocaleDateString("en-US", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       });
     };
 
@@ -69,33 +104,30 @@ const ReceiptList: React.FC = () => {
 
     const formatPaymentType = (type: string) => {
       switch (type) {
-        case 'cash': return 'CASH';
-        case 'bank': return 'BANK TRANSFER';
-        case 'wallet': return 'E-WALLET';
-        case 'cheque': return 'CHEQUE';
-        default: return type.toUpperCase();
+        case "cash":
+          return "CASH";
+        case "bank":
+          return "BANK TRANSFER";
+        case "wallet":
+          return "E-WALLET";
+        case "cheque":
+          return "CHEQUE";
+        default:
+          return type.toUpperCase();
       }
     };
 
-    const getPaymentDetails = (transaction: any) => {
-      if (transaction.paymentType === 'cash') {
-        return '';
+    const getPaymentDetails = (transaction: Transaction) => {
+      if (transaction.paymentType === "cash") {
+        return "";
       }
-      
-      if (transaction.paymentType === 'cheque' && transaction.chequeDetails) {
+
+      if (transaction.paymentType === "cheque" && transaction.chequeDetails) {
         return `Cheque No: ${transaction.chequeDetails.chequeNumber}`;
       }
-      
-      if (transaction.paymentMedium) {
-        if (transaction.paymentMedium.type === 'bank') {
-          return `${transaction.paymentMedium.bankName}`;
-        }
-        if (transaction.paymentMedium.type === 'wallet') {
-          return `${transaction.paymentMedium.walletName}`;
-        }
-      }
-      
-      return '';
+
+      // For now, we'll just show the payment type since we don't have the payment method details
+      return formatPaymentType(transaction.paymentType);
     };
 
     return `
@@ -272,7 +304,9 @@ const ReceiptList: React.FC = () => {
     <div class="bill-title">BILL</div>
     
     <div class="order-info">
-        <div>Order: ${receipt.id.substring(0, 8)} - ${formatDate(receipt.date).split(' ')[1]}</div>
+        <div>Order: ${receipt.id.substring(0, 8)} - ${
+      formatDate(receipt.date).split(" ")[1]
+    }</div>
         <div>Employee: ${client.name}</div>
         <div>POS: POS 1</div>
     </div>
@@ -291,14 +325,26 @@ const ReceiptList: React.FC = () => {
     
     <div class="separator"></div>
     
-    ${receipt.transactions.map((transaction: any, index: number) => `
+    ${receipt.transactions
+      .map(
+        (transaction: Transaction) => `
         <div class="item-line">
-            <span class="item-name">${formatPaymentType(transaction.paymentType)} Payment</span>
-            <span class="item-price">${formatCurrency(transaction.amount)}</span>
+            <span class="item-name">${formatPaymentType(
+              transaction.paymentType
+            )} Payment</span>
+            <span class="item-price">${formatCurrency(
+              transaction.amount
+            )}</span>
         </div>
         <div class="item-qty">1 x ${formatCurrency(transaction.amount)}</div>
-        ${getPaymentDetails(transaction) ? `<div class="small">${getPaymentDetails(transaction)}</div>` : ''}
-    `).join('')}
+        ${
+          getPaymentDetails(transaction)
+            ? `<div class="small">${getPaymentDetails(transaction)}</div>`
+            : ""
+        }
+    `
+      )
+      .join("")}
     
     <div class="separator"></div>
     
@@ -313,49 +359,78 @@ const ReceiptList: React.FC = () => {
     
     <div class="footer">
         <div class="thank-you center">We Love Coffee!!</div>
-        <div class="timestamp center">${formatDate(new Date().toISOString())}</div>
+        <div class="timestamp center">${formatDate(
+          new Date().toISOString()
+        )}</div>
     </div>
 </body>
 </html>`;
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
     }).format(amount);
   };
 
   const getClientName = (clientId: string) => {
-    return clients.find(client => client.id === clientId)?.name || 'Unknown Client';
+    return (
+      clients.find((client) => client.id === clientId)?.name || "Unknown Client"
+    );
   };
 
-  const filteredReceipts = receipts
-    .filter(receipt => 
-      getClientName(receipt.clientId).toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const filteredReceipts = Array.isArray(receipts)
+    ? receipts.filter((receipt) =>
+        getClientName(receipt.clientId)
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())
+      )
+    : [];
 
-  const totalPages = Math.ceil(filteredReceipts.length / ITEMS_PER_PAGE);
-  const paginatedReceipts = filteredReceipts.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    fetchReceipts({ page: newPage });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (receiptError) {
+    return (
+      <div className="text-center py-16">
+        <div className="text-red-500 mb-4">{receiptError}</div>
+        <button
+          onClick={() => fetchReceipts({ page: currentPage })}
+          className="btn btn-primary"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="page-header">
         <div>
           <h1 className="page-title">Receipts</h1>
-          <p className="text-gray-600 mt-2">Manage payment receipts and transaction records.</p>
+          <p className="text-gray-600 mt-2">
+            Manage payment receipts and transaction records.
+          </p>
         </div>
         <Link to="/receipts/add" className="btn btn-primary">
           <Plus size={18} />
@@ -388,7 +463,7 @@ const ReceiptList: React.FC = () => {
           description="Create your first receipt to get started with payment tracking."
           icon={<Receipt size={64} />}
           action={
-            <Link to="/receipts/add\" className="btn btn-primary">
+            <Link to="/receipts/add" className="btn btn-primary">
               <Plus size={18} />
               Create Receipt
             </Link>
@@ -400,8 +475,13 @@ const ReceiptList: React.FC = () => {
             <div className="empty-state-icon mx-auto mb-4">
               <Search size={48} />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No results found</h3>
-            <p className="text-gray-500">No receipts match your search criteria. Try adjusting your search terms.</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              No results found
+            </h3>
+            <p className="text-gray-500">
+              No receipts match your search criteria. Try adjusting your search
+              terms.
+            </p>
           </div>
         </div>
       ) : (
@@ -410,20 +490,26 @@ const ReceiptList: React.FC = () => {
             <table className="w-full">
               <thead className="table-header">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Client</th>
-                  <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Amount</th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">Transactions</th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">Actions</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                    Date
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                    Client
+                  </th>
+                  <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
+                    Amount
+                  </th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
+                    Transactions
+                  </th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {paginatedReceipts.map((receipt, index) => (
-                  <tr 
-                    key={receipt.id} 
-                    className="animate-slide-in"
-                    style={{ animationDelay: `${index * 50}ms` }}
-                  >
+                {filteredReceipts.map((receipt) => (
+                  <tr key={receipt.id} className="animate-slide-in">
                     <td className="px-6 py-4 text-sm text-gray-900 font-medium">
                       {formatDate(receipt.date)}
                     </td>
@@ -443,7 +529,8 @@ const ReceiptList: React.FC = () => {
                     <td className="px-6 py-4 text-center">
                       <div className="inline-flex items-center gap-2">
                         <span className="badge badge-primary">
-                          {receipt.transactions.length} payment{receipt.transactions.length !== 1 ? 's' : ''}
+                          {receipt.transactions.length} payment
+                          {receipt.transactions.length !== 1 ? "s" : ""}
                         </span>
                       </div>
                     </td>
@@ -485,27 +572,32 @@ const ReceiptList: React.FC = () => {
             </table>
           </div>
 
-          {totalPages > 1 && (
+          {pagination && pagination.totalPages > 1 && (
             <div className="card">
               <div className="card-footer">
                 <div className="flex justify-between items-center">
                   <div className="text-sm text-gray-600">
-                    Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, filteredReceipts.length)} of {filteredReceipts.length} receipts
+                    Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
+                    {Math.min(
+                      pagination.page * pagination.limit,
+                      pagination.total
+                    )}{" "}
+                    of {pagination.total} receipts
                   </div>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
+                      onClick={() => handlePageChange(pagination.page - 1)}
+                      disabled={pagination.page === 1}
                       className="btn btn-outline btn-sm"
                     >
                       Previous
                     </button>
                     <span className="px-4 py-2 text-sm text-gray-700">
-                      Page {currentPage} of {totalPages}
+                      Page {pagination.page} of {pagination.totalPages}
                     </span>
                     <button
-                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                      disabled={currentPage === totalPages}
+                      onClick={() => handlePageChange(pagination.page + 1)}
+                      disabled={pagination.page === pagination.totalPages}
                       className="btn btn-outline btn-sm"
                     >
                       Next

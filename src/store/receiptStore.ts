@@ -1,102 +1,138 @@
-import { create } from 'zustand';
-import { Receipt, ReceiptFormData } from '../types';
-
-const STORAGE_KEY = 'billmanager-receipts';
+import { create } from "zustand";
+import { Receipt, ReceiptFormData, ApiError, Pagination } from "../types";
+import { api } from "../api/instance";
 
 interface ReceiptState {
   receipts: Receipt[];
   loading: boolean;
   error: string | null;
-  fetchReceipts: () => void;
-  addReceipt: (receipt: ReceiptFormData) => string;
-  updateReceipt: (id: string, updates: Partial<Receipt>) => void;
-  getReceipt: (id: string) => Receipt | undefined;
-  deleteReceipt: (id: string) => void;
+  pagination: Pagination | null;
+  currentReceipt: Receipt | null;
+  currentReceiptLoading: boolean;
+  currentReceiptError: string | null;
+  fetchReceipts: (params?: {
+    page?: number;
+    limit?: number;
+    startDate?: string;
+    endDate?: string;
+    clientId?: string;
+  }) => Promise<void>;
+  addReceipt: (data: ReceiptFormData) => Promise<Receipt>;
+  updateReceipt: (
+    id: string,
+    data: Partial<Receipt>
+  ) => Promise<Receipt | null>;
+  deleteReceipt: (id: string) => Promise<boolean>;
+  getReceipt: (id: string) => Promise<Receipt | null>;
 }
 
-const loadReceipts = (): Receipt[] => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch (error) {
-    console.error('Failed to load receipts from localStorage', error);
-    return [];
-  }
-};
-
-const saveReceipts = (receipts: Receipt[]): void => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(receipts));
-  } catch (error) {
-    console.error('Failed to save receipts to localStorage', error);
-  }
-};
-
-export const useReceiptStore = create<ReceiptState>((set, get) => ({
+export const useReceiptStore = create<ReceiptState>((set) => ({
   receipts: [],
   loading: false,
   error: null,
+  pagination: null,
+  currentReceipt: null,
+  currentReceiptLoading: false,
+  currentReceiptError: null,
 
-  fetchReceipts: () => {
+  fetchReceipts: async ({
+    page = 1,
+    limit = 10,
+    startDate,
+    endDate,
+    clientId,
+  } = {}) => {
     set({ loading: true, error: null });
     try {
-      const receipts = loadReceipts();
-      set({ receipts, loading: false });
-    } catch (error) {
-      set({ error: 'Failed to fetch receipts', loading: false });
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        ...(startDate && { startDate }),
+        ...(endDate && { endDate }),
+        ...(clientId && { clientId }),
+      });
+
+      const res = await api.get<{ data: Receipt[]; pagination: Pagination }>(
+        `/receipts?${queryParams.toString()}`
+      );
+      set({
+        receipts: res.data.data,
+        pagination: res.data.pagination,
+        loading: false,
+      });
+    } catch (error: unknown) {
+      let message = "Failed to fetch receipts";
+      if (
+        error &&
+        typeof error === "object" &&
+        "message" in error &&
+        typeof (error as { message?: unknown }).message === "string"
+      ) {
+        message = (error as { message: string }).message;
+      }
+      set({ error: message, loading: false });
     }
   },
 
-  addReceipt: (receiptData) => {
-    const now = new Date().toISOString();
-    const id = `receipt_${Date.now()}`;
-
-    const total = receiptData.transactions.reduce((sum, t) => sum + t.amount, 0);
-
-    const newReceipt: Receipt = {
-      id,
-      date: receiptData.date,
-      clientId: receiptData.clientId,
-      transactions: receiptData.transactions.map(t => ({ ...t, id: `trans_${Date.now()}_${Math.random()}` })),
-      total,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    set((state) => {
-      const updatedReceipts = [...state.receipts, newReceipt];
-      saveReceipts(updatedReceipts);
-      return { receipts: updatedReceipts };
-    });
-
-    return id;
+  addReceipt: async (data: ReceiptFormData): Promise<Receipt> => {
+    console.log({ ReceiptFormData: data });
+    try {
+      const res = await api.post<{ data: Receipt }, ReceiptFormData>(
+        "/receipts",
+        data
+      );
+      set((state) => ({ receipts: [...state.receipts, res.data.data] }));
+      return res.data.data;
+    } catch (error: unknown) {
+      throw error as ApiError;
+    }
   },
 
-  updateReceipt: (id, updates) => {
-    set((state) => {
-      const index = state.receipts.findIndex(r => r.id === id);
-      if (index === -1) return state;
-
-      const updatedReceipts = [...state.receipts];
-      updatedReceipts[index] = {
-        ...updatedReceipts[index],
-        ...updates,
-      };
-
-      saveReceipts(updatedReceipts);
-      return { receipts: updatedReceipts };
-    });
+  updateReceipt: async (id: string, data: Partial<Receipt>) => {
+    try {
+      const res = await api.put<{ data: Receipt }, Partial<Receipt>>(
+        `/receipts/${id}`,
+        data
+      );
+      set((state) => ({
+        receipts: state.receipts.map((r) => (r.id === +id ? res.data.data : r)),
+      }));
+      return res.data.data;
+    } catch (error: unknown) {
+      throw error as ApiError;
+    }
   },
 
-  getReceipt: (id) => {
-    return get().receipts.find((receipt) => receipt.id === id);
+  deleteReceipt: async (id: string) => {
+    try {
+      await api.delete(`/receipts/${id}`);
+      set((state) => ({
+        receipts: state.receipts.filter((r) => r.id !== +id),
+      }));
+      return true;
+    } catch (error: unknown) {
+      throw error as ApiError;
+    }
   },
 
-  deleteReceipt: (id) => {
-    set((state) => {
-      const updatedReceipts = state.receipts.filter((receipt) => receipt.id !== id);
-      saveReceipts(updatedReceipts);
-      return { receipts: updatedReceipts };
-    });
+  getReceipt: async (id: string): Promise<Receipt | null> => {
+    set({ currentReceiptLoading: true, currentReceiptError: null });
+    try {
+      const res = await api.get<{ data: Receipt }>(`/receipts/${id}`);
+      set({ currentReceipt: res.data.data, currentReceiptLoading: false });
+      return res.data.data;
+    } catch (error: unknown) {
+      let message = "Failed to fetch receipt";
+      if (
+        error &&
+        typeof error === "object" &&
+        "message" in error &&
+        typeof (error as { message?: unknown }).message === "string"
+      ) {
+        message = (error as { message: string }).message;
+      }
+      set({ currentReceiptError: message, currentReceiptLoading: false });
+      return null;
+    }
   },
 }));

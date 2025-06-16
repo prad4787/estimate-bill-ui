@@ -1,68 +1,132 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Plus, Search, FileText, Eye } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { useEstimateStore } from '../../store/estimateStore';
-import { useClientStore } from '../../store/clientStore';
-import EmptyState from '../../components/ui/EmptyState';
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { Plus, Search, FileText, Eye } from "lucide-react";
+import toast from "react-hot-toast";
+import { useEstimateStore } from "../../store/estimateStore";
+import { useClientStore } from "../../store/clientStore";
+import EmptyState from "../../components/ui/EmptyState";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import { Estimate } from "../../types";
 
 const ITEMS_PER_PAGE = 10;
 
 const EstimateList: React.FC = () => {
-  const { estimates, fetchEstimates, deleteEstimate } = useEstimateStore();
+  const {
+    estimates,
+    loading,
+    error: estimateError,
+    pagination,
+    fetchEstimates,
+    deleteEstimate,
+  } = useEstimateStore();
   const { clients, fetchClients } = useClientStore();
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  
-  useEffect(() => {
-    fetchEstimates();
-    fetchClients();
-  }, [fetchEstimates, fetchClients]);
+  const [deletingEstimateId, setDeletingEstimateId] = useState<
+    Estimate["id"] | null
+  >(null);
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this estimate?')) {
-      deleteEstimate(id);
-      toast.success('Estimate deleted successfully');
+  useEffect(() => {
+    fetchEstimates({
+      page: currentPage,
+      limit: ITEMS_PER_PAGE,
+      search: searchTerm,
+    });
+    fetchClients();
+  }, [fetchEstimates, fetchClients, currentPage, searchTerm]);
+
+  const handleDelete = async (id: Estimate["id"]) => {
+    if (window.confirm("Are you sure you want to delete this estimate?")) {
+      setDeletingEstimateId(id);
+      try {
+        const success = await deleteEstimate(id);
+        if (success) {
+          toast.success("Estimate deleted successfully");
+          // Refresh the list
+          fetchEstimates({
+            page: currentPage,
+            limit: ITEMS_PER_PAGE,
+            search: searchTerm,
+          });
+        } else {
+          toast.error("Failed to delete estimate");
+        }
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to delete estimate";
+        toast.error(errorMessage);
+      } finally {
+        setDeletingEstimateId(null);
+      }
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
     }).format(amount);
   };
 
   const getClientName = (clientId: string) => {
-    return clients.find(client => client.id === clientId)?.name || 'Unknown Client';
+    const client = clients.find((c) => String(c.id) === clientId);
+    return client ? client.name : "N/A";
   };
 
-  const filteredEstimates = estimates
-    .filter(estimate => 
-      getClientName(estimate.clientId).toLowerCase().includes(searchTerm.toLowerCase()) ||
-      estimate.number.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1); // Reset to first page on search
+  };
 
-  const totalPages = Math.ceil(filteredEstimates.length / ITEMS_PER_PAGE);
-  const paginatedEstimates = filteredEstimates.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (estimateError) {
+    return (
+      <div className="text-center py-12">
+        <h2 className="text-2xl font-medium mb-2">Error</h2>
+        <p className="text-gray-500 mb-6">{estimateError}</p>
+        <button
+          onClick={() =>
+            fetchEstimates({
+              page: currentPage,
+              limit: ITEMS_PER_PAGE,
+              search: searchTerm,
+            })
+          }
+          className="btn btn-primary"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1>Estimates</h1>
-        <Link to="/estimates/add" className="btn btn-primary inline-flex items-center">
+        <Link
+          to="/estimates/add"
+          className="btn btn-primary inline-flex items-center"
+        >
           <Plus size={16} className="mr-1" />
           Create Estimate
         </Link>
@@ -78,7 +142,7 @@ const EstimateList: React.FC = () => {
             placeholder="Search estimates by client name or number..."
             className="form-input pl-10 border-gray-300"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleSearch}
           />
         </div>
       )}
@@ -94,10 +158,6 @@ const EstimateList: React.FC = () => {
             </Link>
           }
         />
-      ) : filteredEstimates.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-6 text-center">
-          <p className="text-gray-500">No estimates match your search.</p>
-        </div>
       ) : (
         <>
           <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -122,7 +182,7 @@ const EstimateList: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {paginatedEstimates.map((estimate) => (
+                {estimates.map((estimate) => (
                   <tr key={estimate.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {estimate.number}
@@ -146,8 +206,11 @@ const EstimateList: React.FC = () => {
                       <button
                         onClick={() => handleDelete(estimate.id)}
                         className="text-red-600 hover:text-red-900"
+                        disabled={deletingEstimateId === estimate.id}
                       >
-                        Delete
+                        {deletingEstimateId === estimate.id
+                          ? "Deleting..."
+                          : "Delete"}
                       </button>
                     </td>
                   </tr>
@@ -156,21 +219,21 @@ const EstimateList: React.FC = () => {
             </table>
           </div>
 
-          {totalPages > 1 && (
+          {pagination && pagination.totalPages > 1 && (
             <div className="flex justify-center space-x-2">
               <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
                 className="btn btn-outline px-3 py-1"
               >
                 Previous
               </button>
               <span className="px-4 py-1 text-gray-700">
-                Page {currentPage} of {totalPages}
+                Page {currentPage} of {pagination.totalPages}
               </span>
               <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === pagination.totalPages}
                 className="btn btn-outline px-3 py-1"
               >
                 Next

@@ -28,7 +28,7 @@ exports.createClient = async (req, res, next) => {
   }
   try {
     const client = await clientService.createClient(req.body);
-    res.apiSuccess(client, "Client created", 201);
+    res.apiSuccess({ data: client, message: "Client created" }, 201);
   } catch (err) {
     next(err);
   }
@@ -38,7 +38,7 @@ exports.updateClient = async (req, res, next) => {
   try {
     const client = await clientService.updateClient(req.params.id, req.body);
     if (!client) return res.apiError("Client not found", 404);
-    res.apiSuccess(client, "Client updated");
+    res.apiSuccess({ data: client, message: "Client updated" });
   } catch (err) {
     next(err);
   }
@@ -48,7 +48,7 @@ exports.deleteClient = async (req, res, next) => {
   try {
     const deleted = await clientService.deleteClient(req.params.id);
     if (!deleted) return res.apiError("Client not found", 404);
-    res.apiSuccess(null, "Client deleted");
+    res.apiSuccess({ message: "Client deleted" });
   } catch (err) {
     next(err);
   }

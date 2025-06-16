@@ -12,13 +12,11 @@ exports.login = async (req, res, next) => {
     const token = Buffer.from(`${user.id}:${user.email}:${user.role}`).toString(
       "base64"
     );
-    res.apiSuccess(
-      {
-        token,
-        user: { id: user.id, email: user.email, role: user.role },
-      },
-      "Login successful"
-    );
+    res.apiSuccess({
+      token,
+      user: { id: user.id, email: user.email, role: user.role },
+      message: "Login successful",
+    });
   } catch (err) {
     next(err);
   }

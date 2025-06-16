@@ -1,33 +1,30 @@
 const { DataTypes } = require("sequelize");
 
 module.exports = (sequelize) => {
-  const JournalEntry = sequelize.define("JournalEntry", {
+  const Receipt = sequelize.define("Receipt", {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
     date: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
     },
-    particular: {
-      type: DataTypes.STRING,
+    clientId: {
+      type: DataTypes.INTEGER,
       allowNull: false,
+      references: {
+        model: "Clients",
+        key: "id",
+      },
     },
-    type: {
-      type: DataTypes.ENUM("bill", "receipt"),
-      allowNull: false,
-    },
-    amount: {
+    total: {
       type: DataTypes.FLOAT,
       allowNull: false,
       validate: {
         min: 0,
-      },
-    },
-    referenceId: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: "Receipts",
-        key: "id",
       },
     },
     notes: {
@@ -36,5 +33,5 @@ module.exports = (sequelize) => {
     },
   });
 
-  return JournalEntry;
+  return Receipt;
 };

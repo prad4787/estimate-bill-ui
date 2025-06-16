@@ -4,6 +4,7 @@ const { AppConfig } = require("../config");
 const sequelize = new Sequelize({
   dialect: AppConfig.DB.DIALECT,
   storage: AppConfig.DB.DB_PATH,
+  // logging: false,
 });
 
 console.log({
@@ -18,6 +19,10 @@ const StockModel = require("./stock")(sequelize);
 const OrganizationModel = require("./organization")(sequelize);
 const OrganizationContactModel = require("./organizationContact")(sequelize);
 const PaymentMethodModel = require("./paymentMethod")(sequelize);
+const ReceiptModel = require("./receipt")(sequelize);
+const TransactionModel = require("./transaction")(sequelize);
+const BillModel = require("./bill")(sequelize);
+const EstimateModel = require("./estimateModel")(sequelize);
 
 // Set up associations
 ClientModel.hasMany(JournalEntryModel, {
@@ -39,14 +44,50 @@ OrganizationContactModel.belongsTo(OrganizationModel, {
   as: "organization",
 });
 
-// Payment Method associations with Journal Entry
-PaymentMethodModel.hasMany(JournalEntryModel, {
-  foreignKey: "paymentMethodId",
-  as: "journalEntries",
+// Receipt associations
+ClientModel.hasMany(ReceiptModel, {
+  foreignKey: "clientId",
+  as: "receipts",
 });
-JournalEntryModel.belongsTo(PaymentMethodModel, {
+ReceiptModel.belongsTo(ClientModel, {
+  foreignKey: "clientId",
+  as: "client",
+});
+
+ReceiptModel.hasMany(TransactionModel, {
+  foreignKey: "receiptId",
+  as: "transactions",
+});
+TransactionModel.belongsTo(ReceiptModel, {
+  foreignKey: "receiptId",
+  as: "receipt",
+});
+
+// Bill associations
+ClientModel.hasMany(BillModel, {
+  foreignKey: "clientId",
+  as: "bills",
+});
+BillModel.belongsTo(ClientModel, {
+  foreignKey: "clientId",
+  as: "client",
+});
+
+// Transaction associations
+TransactionModel.belongsTo(PaymentMethodModel, {
   foreignKey: "paymentMethodId",
   as: "paymentMethod",
+});
+
+// Estimate associations
+ClientModel.hasMany(EstimateModel, {
+  foreignKey: "clientId",
+  as: "estimates",
+});
+
+EstimateModel.belongsTo(ClientModel, {
+  foreignKey: "clientId",
+  as: "client",
 });
 
 async function seedAdmin() {
@@ -121,10 +162,17 @@ async function seedDefaultPaymentMethods() {
 // Initialize database
 const initDatabase = async () => {
   try {
+    // First sync without force to check if tables exist
     await sequelize.sync();
+
+    // Then force sync to recreate tables
+    await sequelize.sync({ force: true });
+
+    // Seed in correct order
     await seedAdmin();
     await seedOrganization();
     await seedDefaultPaymentMethods();
+
     console.log("Database initialized successfully");
   } catch (error) {
     console.error("Error initializing database:", error);
@@ -143,4 +191,8 @@ module.exports = {
   OrganizationModel,
   OrganizationContactModel,
   PaymentMethodModel,
+  ReceiptModel,
+  TransactionModel,
+  BillModel,
+  EstimateModel,
 };

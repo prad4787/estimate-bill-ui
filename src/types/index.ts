@@ -1,8 +1,10 @@
 export interface Client {
-  id: string;
+  id: number;
   name: string;
   address?: string;
   panVat?: string;
+  phone?: string;
+  email?: string;
   openingBalance: number;
   createdAt: string;
   updatedAt: string;
@@ -87,32 +89,42 @@ export type PaymentMedium =
   | ChequePayment;
 
 export interface Transaction {
-  id: string;
+  id: number;
   amount: number;
-  paymentType: PaymentType;
-  paymentMedium?: PaymentMedium;
+  paymentType: "cash" | "bank" | "wallet" | "cheque";
+  paymentMethodId?: number;
+  receiptId?: number;
   chequeDetails?: {
     bankName: string;
     chequeNumber: string;
-    chequeName: string;
-    chequeDate: string;
+    branchName: string;
+    issueDate: string;
   };
+  paymentMethod?: PaymentMethod;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Receipt {
-  id: string;
+  id: number;
   date: string;
-  clientId: string;
-  transactions: Transaction[];
+  clientId: number;
   total: number;
+  notes?: string;
+  transactions: Transaction[];
+  client?: Client;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface ReceiptFormData {
   date: string;
-  clientId: string;
-  transactions: Omit<Transaction, "id">[];
+  clientId: number;
+  notes?: string;
+  transactions: Omit<
+    Transaction,
+    "id" | "receiptId" | "createdAt" | "updatedAt" | "paymentMethod"
+  >[];
 }
 
 export interface OrganizationInfo {
@@ -216,13 +228,12 @@ export interface ApiResponse<T> {
 }
 
 export interface PaymentMethod {
-  id: string;
-  type: PaymentType;
-  name?: string;
-  accountName?: string;
-  accountNumber?: string;
+  id: number;
+  type: "cash" | "bank" | "wallet";
+  name: string;
+  accountName: string;
+  accountNumber: string;
   balance?: number;
-  isDefault: boolean;
   createdAt: string;
   updatedAt: string;
 }
