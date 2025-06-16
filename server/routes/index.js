@@ -19,7 +19,7 @@ router.use("/organization", organizationRoutes);
 router.use("/payment-methods", paymentMethodRoutes);
 router.use("/transactions", transactionRoutes);
 
-router.use("/api/receipts", receiptRoutes);
-router.use("/api/estimates", estimateRoutes);
+router.use("/receipts", receiptRoutes);
+router.use("/estimates", estimateRoutes);
 
 module.exports = router;

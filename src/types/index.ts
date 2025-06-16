@@ -223,7 +223,7 @@ export interface ApiResponse<T> {
   status: number;
   success: boolean;
   message: string;
-  data: T;
+  data: T | T[];
   pagination?: Pagination;
 }
 

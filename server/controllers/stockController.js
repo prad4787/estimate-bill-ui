@@ -27,7 +27,7 @@ exports.createStock = async (req, res, next) => {
       return res.apiValidationError(["Name is required"]);
     }
     const stock = await stockService.createStock({ name, quantity, status });
-    res.apiSuccess(stock, "Stock created", 201);
+    res.apiSuccess(stock);
   } catch (err) {
     next(err);
   }

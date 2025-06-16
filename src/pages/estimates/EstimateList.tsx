@@ -132,7 +132,7 @@ const EstimateList: React.FC = () => {
         </Link>
       </div>
 
-      {estimates.length > 0 && (
+      {(estimates || []).length > 0 && (
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search size={18} className="text-gray-400" />
@@ -147,7 +147,7 @@ const EstimateList: React.FC = () => {
         </div>
       )}
 
-      {estimates.length === 0 ? (
+      {(estimates || []).length === 0 ? (
         <EmptyState
           title="No estimates found"
           description="Create your first estimate to get started."

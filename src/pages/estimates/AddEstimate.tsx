@@ -1,34 +1,36 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-hot-toast';
-import { Plus, ArrowLeft } from 'lucide-react';
-import { useEstimateStore } from '../../store/estimateStore';
-import { useClientStore } from '../../store/clientStore';
-import { useStockStore } from '../../store/stockStore';
-import { EstimateFormData, EstimateItem, Client } from '../../types';
-import SuccessModal from '../../components/estimates/SuccessModal';
-import ClientModal from '../../components/clients/ClientModal';
-import ClientSelect from '../../components/clients/ClientSelect';
-import SearchableSelect, { SelectOption } from '../../components/ui/SearchableSelect';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
+import { Plus, ArrowLeft } from "lucide-react";
+import { useEstimateStore } from "../../store/estimateStore";
+import { useClientStore } from "../../store/clientStore";
+import { useStockStore } from "../../store/stockStore";
+import { EstimateFormData, EstimateItem, Client } from "../../types";
+import SuccessModal from "../../components/estimates/SuccessModal";
+import ClientModal from "../../components/clients/ClientModal";
+import ClientSelect from "../../components/clients/ClientSelect";
+import SearchableSelect, {
+  SelectOption,
+} from "../../components/ui/SearchableSelect";
 
 const AddEstimate: React.FC = () => {
   const navigate = useNavigate();
   const { addEstimate } = useEstimateStore();
   const { clients, fetchClients } = useClientStore();
   const { stocks, fetchStocks, addStock } = useStockStore();
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [items, setItems] = useState<EstimateItem[]>([
     {
       sn: 1,
-      item: '',
+      item: "",
       quantity: 1,
       rate: 0,
       total: 0,
-      description: ''
-    }
+      description: "",
+    },
   ]);
-  const [discountType, setDiscountType] = useState<'rate' | 'amount'>('rate');
+  const [discountType, setDiscountType] = useState<"rate" | "amount">("rate");
   const [discountValue, setDiscountValue] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -40,7 +42,6 @@ const AddEstimate: React.FC = () => {
     fetchStocks();
   }, [fetchClients, fetchStocks]);
 
-
   const handleClientCreated = (newClient: Client) => {
     setSelectedClient(newClient);
     setShowClientModal(false);
@@ -48,28 +49,26 @@ const AddEstimate: React.FC = () => {
   };
 
   // Convert stocks to SelectOption format
-  const stockOptions: SelectOption[] = stocks.map(stock => ({
-    id: stock.id,
+  const stockOptions: SelectOption[] = (stocks || []).map((stock) => ({
+    id: String(stock.id), // Convert id to string
     name: stock.name,
     quantity: stock.quantity,
-    createdAt: stock.createdAt
+    createdAt: stock.createdAt,
   }));
 
   // Handle creating new stock item
   const handleCreateStock = async (name: string): Promise<SelectOption> => {
-    const stockId = addStock({
+    const newStock = await addStock({
       name,
-      quantity: null // New items are untracked by default
+      quantity: null, // New items are untracked by default
     });
-    
-    const newStock = {
-      id: stockId,
-      name,
-      quantity: null,
-      createdAt: new Date().toISOString()
+
+    return {
+      id: String(newStock.id),
+      name: newStock.name,
+      quantity: newStock.quantity,
+      createdAt: newStock.createdAt,
     };
-    
-    return newStock;
   };
 
   // Render stock option with quantity info
@@ -78,15 +77,21 @@ const AddEstimate: React.FC = () => {
       <div className="flex-1">
         <div className="font-medium text-gray-900">{option.name}</div>
         <div className="text-xs text-gray-500 mt-1">
-          {option.quantity !== null ? `Stock: ${option.quantity}` : 'Quantity not tracked'}
+          {option.quantity !== null
+            ? `Stock: ${option.quantity}`
+            : "Quantity not tracked"}
         </div>
       </div>
       {option.quantity !== null && option.quantity < 10 && (
         <div className="ml-2">
-          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-            option.quantity === 0 ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
-          }`}>
-            {option.quantity === 0 ? 'Out of Stock' : 'Low Stock'}
+          <span
+            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+              option.quantity === 0
+                ? "bg-red-100 text-red-800"
+                : "bg-yellow-100 text-yellow-800"
+            }`}
+          >
+            {option.quantity === 0 ? "Out of Stock" : "Low Stock"}
           </span>
         </div>
       )}
@@ -96,27 +101,31 @@ const AddEstimate: React.FC = () => {
     return quantity * rate;
   };
 
-  const handleItemChange = (index: number, field: keyof EstimateItem | 'stockOption', value: string | number | SelectOption | null) => {
+  const handleItemChange = (
+    index: number,
+    field: keyof EstimateItem | "stockOption",
+    value: string | number | SelectOption | null
+  ) => {
     const newItems = [...items];
-    
-    if (field === 'stockOption') {
+
+    if (field === "stockOption") {
       // Handle stock selection
       const stockOption = value as SelectOption | null;
       newItems[index] = {
         ...newItems[index],
-        item: stockOption ? stockOption.name : ''
+        item: stockOption ? stockOption.name : "",
       };
     } else {
       newItems[index] = {
         ...newItems[index],
-        [field]: value
+        [field]: value,
       };
     }
 
-    if (field === 'quantity' || field === 'rate') {
+    if (field === "quantity" || field === "rate") {
       newItems[index].total = calculateItemTotal(
-        field === 'quantity' ? Number(value) : newItems[index].quantity,
-        field === 'rate' ? Number(value) : newItems[index].rate
+        field === "quantity" ? Number(value) : newItems[index].quantity,
+        field === "rate" ? Number(value) : newItems[index].rate
       );
     }
 
@@ -128,12 +137,12 @@ const AddEstimate: React.FC = () => {
       ...items,
       {
         sn: items.length + 1,
-        item: '',
+        item: "",
         quantity: 1,
         rate: 0,
         total: 0,
-        description: ''
-      }
+        description: "",
+      },
     ]);
   };
 
@@ -154,7 +163,7 @@ const AddEstimate: React.FC = () => {
 
   const calculateDiscount = () => {
     const subTotal = calculateSubTotal();
-    return discountType === 'rate'
+    return discountType === "rate"
       ? (subTotal * discountValue) / 100
       : discountValue;
   };
@@ -166,12 +175,14 @@ const AddEstimate: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedClient) {
-      toast.error('Please select a client');
+      toast.error("Please select a client");
       return;
     }
 
-    if (items.some(item => !item.item || item.quantity <= 0 || item.rate <= 0)) {
-      toast.error('Please fill in all item details correctly');
+    if (
+      items.some((item) => !item.item || item.quantity <= 0 || item.rate <= 0)
+    ) {
+      toast.error("Please fill in all item details correctly");
       return;
     }
 
@@ -180,17 +191,17 @@ const AddEstimate: React.FC = () => {
     try {
       const estimateData: EstimateFormData = {
         date: new Date().toISOString(),
-        clientId: selectedClient.id,
+        clientId: String(selectedClient.id),
         items,
         discountType,
-        discountValue
+        discountValue,
       };
 
-      const id = addEstimate(estimateData);
-      setSavedEstimateId(id);
+      const estimate = await addEstimate(estimateData);
+      setSavedEstimateId(estimate.id);
       setShowSuccessModal(true);
     } catch (error) {
-      toast.error('Failed to create estimate');
+      toast.error("Failed to create estimate");
       console.error(error);
     } finally {
       setIsSubmitting(false);
@@ -201,7 +212,7 @@ const AddEstimate: React.FC = () => {
     <div className="space-y-8 animate-fade-in">
       <div>
         <button
-          onClick={() => navigate('/estimates')}
+          onClick={() => navigate("/estimates")}
           className="inline-flex items-center text-gray-600 mb-6"
         >
           <ArrowLeft size={18} className="mr-2" />
@@ -210,7 +221,9 @@ const AddEstimate: React.FC = () => {
         <div className="page-header">
           <div>
             <h1 className="page-title">Create Estimate</h1>
-            <p className="text-gray-600 mt-2">Generate a professional estimate for your client.</p>
+            <p className="text-gray-600 mt-2">
+              Generate a professional estimate for your client.
+            </p>
           </div>
         </div>
       </div>
@@ -218,7 +231,9 @@ const AddEstimate: React.FC = () => {
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="card">
           <div className="card-header">
-            <h2 className="text-xl font-semibold text-gray-900">Client Information</h2>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Client Information
+            </h2>
           </div>
           <div className="card-body">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -245,31 +260,53 @@ const AddEstimate: React.FC = () => {
           </div>
 
           <div className="card-header">
-            <h2 className="text-xl font-semibold text-gray-900">Items & Services</h2>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Items & Services
+            </h2>
           </div>
           <div className="card-body">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="bg-gray-50">
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">SN</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Item</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Quantity</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Rate</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Total</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                      SN
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                      Item
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                      Quantity
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                      Rate
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                      Total
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {items.map((item, index) => (
                     <React.Fragment key={index}>
                       <tr>
-                        <td className="px-4 py-3 text-sm text-gray-900">{item.sn}</td>
+                        <td className="px-4 py-3 text-sm text-gray-900">
+                          {item.sn}
+                        </td>
                         <td className="px-4 py-3">
                           <SearchableSelect
                             options={stockOptions}
-                            value={stockOptions.find(opt => opt.name === item.item) || null}
-                            onChange={(option) => handleItemChange(index, 'stockOption', option)}
+                            value={
+                              stockOptions.find(
+                                (opt) => opt.name === item.item
+                              ) || null
+                            }
+                            onChange={(option) =>
+                              handleItemChange(index, "stockOption", option)
+                            }
                             onCreateNew={handleCreateStock}
                             placeholder="Select or create item..."
                             searchPlaceholder="Search items or type to create..."
@@ -283,18 +320,32 @@ const AddEstimate: React.FC = () => {
                             type="number"
                             className="form-input"
                             value={item.quantity}
-                            onChange={(e) => handleItemChange(index, 'quantity', Number(e.target.value))}
+                            onChange={(e) =>
+                              handleItemChange(
+                                index,
+                                "quantity",
+                                Number(e.target.value)
+                              )
+                            }
                             min="1"
                           />
                         </td>
                         <td className="px-4 py-3">
                           <div className="relative">
-                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                              $
+                            </span>
                             <input
                               type="number"
                               className="form-input pl-8"
                               value={item.rate}
-                              onChange={(e) => handleItemChange(index, 'rate', Number(e.target.value))}
+                              onChange={(e) =>
+                                handleItemChange(
+                                  index,
+                                  "rate",
+                                  Number(e.target.value)
+                                )
+                              }
                               min="0"
                               step="0.01"
                               placeholder="0.00"
@@ -323,7 +374,13 @@ const AddEstimate: React.FC = () => {
                             className="form-input"
                             placeholder="Description (optional)"
                             value={item.description}
-                            onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                            onChange={(e) =>
+                              handleItemChange(
+                                index,
+                                "description",
+                                e.target.value
+                              )
+                            }
                           />
                         </td>
                       </tr>
@@ -355,7 +412,9 @@ const AddEstimate: React.FC = () => {
                   <select
                     className="form-input flex-1"
                     value={discountType}
-                    onChange={(e) => setDiscountType(e.target.value as 'rate' | 'amount')}
+                    onChange={(e) =>
+                      setDiscountType(e.target.value as "rate" | "amount")
+                    }
                   >
                     <option value="rate">Discount (%)</option>
                     <option value="amount">Discount ($)</option>
@@ -366,14 +425,16 @@ const AddEstimate: React.FC = () => {
                     value={discountValue}
                     onChange={(e) => setDiscountValue(Number(e.target.value))}
                     min="0"
-                    step={discountType === 'rate' ? '1' : '0.01'}
-                    placeholder={discountType === 'rate' ? '0' : '0.00'}
+                    step={discountType === "rate" ? "1" : "0.01"}
+                    placeholder={discountType === "rate" ? "0" : "0.00"}
                   />
                 </div>
 
                 <div className="flex justify-between text-xl font-bold border-t pt-4">
                   <span>Total:</span>
-                  <span className="text-blue-600">${calculateTotal().toFixed(2)}</span>
+                  <span className="text-blue-600">
+                    ${calculateTotal().toFixed(2)}
+                  </span>
                 </div>
               </div>
             </div>
@@ -383,7 +444,7 @@ const AddEstimate: React.FC = () => {
         <div className="flex justify-end gap-4">
           <button
             type="button"
-            onClick={() => navigate('/estimates')}
+            onClick={() => navigate("/estimates")}
             className="btn btn-outline"
           >
             Cancel
@@ -399,7 +460,7 @@ const AddEstimate: React.FC = () => {
                 Creating...
               </>
             ) : (
-              'Create Estimate'
+              "Create Estimate"
             )}
           </button>
         </div>
@@ -410,7 +471,7 @@ const AddEstimate: React.FC = () => {
           estimateId={savedEstimateId}
           onClose={() => {
             setShowSuccessModal(false);
-            navigate('/estimates');
+            navigate("/estimates");
           }}
         />
       )}

@@ -24,6 +24,15 @@ interface EstimateState {
   getEstimate: (id: string) => Promise<Estimate | null>;
 }
 
+interface EstimateListResponse {
+  data: Estimate[];
+  pagination: Pagination;
+}
+
+interface EstimateResponse {
+  data: Estimate;
+}
+
 export const useEstimateStore = create<EstimateState>((set) => ({
   estimates: [],
   loading: false,
@@ -36,72 +45,77 @@ export const useEstimateStore = create<EstimateState>((set) => ({
   fetchEstimates: async ({ page = 1, limit = 10, search = "" } = {}) => {
     set({ loading: true, error: null });
     try {
-      const queryParams = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        ...(search && { search }),
-      });
-
-      const res = await api.get<{ data: Estimate[]; pagination: Pagination }>(
-        `/estimates?${queryParams.toString()}`
+      const res = await api.get<EstimateListResponse>(
+        `/estimates?page=${page}&limit=${limit}&search=${search}`
       );
-      set({
-        estimates: res.data.data,
-        pagination: res.data.pagination,
-        loading: false,
-      });
-    } catch (error: unknown) {
-      let message = "Failed to fetch estimates";
-      if (
-        error &&
-        typeof error === "object" &&
-        "message" in error &&
-        typeof (error as { message?: unknown }).message === "string"
-      ) {
-        message = (error as { message: string }).message;
+      if (res.success) {
+        set({
+          estimates: res.data.data,
+          pagination: res.data.pagination,
+          loading: false,
+        });
+      } else {
+        set({
+          error: res.message || "Failed to fetch estimates",
+          loading: false,
+        });
       }
-      set({ error: message, loading: false });
+    } catch (error) {
+      console.error("Error fetching estimates:", error);
+      set({ error: "Failed to fetch estimates", loading: false });
     }
   },
 
   addEstimate: async (data: EstimateFormData): Promise<Estimate> => {
     try {
-      const res = await api.post<{ data: Estimate }, EstimateFormData>(
+      const res = await api.post<EstimateResponse, EstimateFormData>(
         "/estimates",
         data
       );
-      set((state) => ({ estimates: [...state.estimates, res.data.data] }));
-      return res.data.data;
-    } catch (error: unknown) {
+      if (res.success) {
+        set((state) => ({ estimates: [...state.estimates, res.data.data] }));
+        return res.data.data;
+      } else {
+        throw new Error(res.message || "Failed to create estimate");
+      }
+    } catch (error) {
       throw error as ApiError;
     }
   },
 
   updateEstimate: async (id: string, data: Partial<Estimate>) => {
     try {
-      const res = await api.put<{ data: Estimate }, Partial<Estimate>>(
+      const res = await api.put<EstimateResponse, Partial<Estimate>>(
         `/estimates/${id}`,
         data
       );
-      set((state) => ({
-        estimates: state.estimates.map((e) =>
-          e.id === id ? res.data.data : e
-        ),
-      }));
-      return res.data.data;
-    } catch (error: unknown) {
+      if (res.success) {
+        set((state) => ({
+          estimates: state.estimates.map((e) =>
+            e.id === id ? res.data.data : e
+          ),
+        }));
+        return res.data.data;
+      } else {
+        throw new Error(res.message || "Failed to update estimate");
+      }
+    } catch (error) {
       throw error as ApiError;
     }
   },
 
   deleteEstimate: async (id: string) => {
     try {
-      await api.delete(`/estimates/${id}`);
-      set((state) => ({
-        estimates: state.estimates.filter((e) => e.id !== id),
-      }));
-      return true;
-    } catch (error: unknown) {
+      const res = await api.delete<{ message: string }>(`/estimates/${id}`);
+      if (res.success) {
+        set((state) => ({
+          estimates: state.estimates.filter((e) => e.id !== id),
+        }));
+        return true;
+      } else {
+        throw new Error(res.message || "Failed to delete estimate");
+      }
+    } catch (error) {
       throw error as ApiError;
     }
   },
@@ -109,20 +123,23 @@ export const useEstimateStore = create<EstimateState>((set) => ({
   getEstimate: async (id: string): Promise<Estimate | null> => {
     set({ currentEstimateLoading: true, currentEstimateError: null });
     try {
-      const res = await api.get<{ data: Estimate }>(`/estimates/${id}`);
-      set({ currentEstimate: res.data.data, currentEstimateLoading: false });
-      return res.data.data;
-    } catch (error: unknown) {
-      let message = "Failed to fetch estimate";
-      if (
-        error &&
-        typeof error === "object" &&
-        "message" in error &&
-        typeof (error as { message?: unknown }).message === "string"
-      ) {
-        message = (error as { message: string }).message;
+      const res = await api.get<EstimateResponse>(`/estimates/${id}`);
+      if (res.success) {
+        set({ currentEstimate: res.data.data, currentEstimateLoading: false });
+        return res.data.data;
+      } else {
+        set({
+          currentEstimateError: res.message || "Failed to fetch estimate",
+          currentEstimateLoading: false,
+        });
+        return null;
       }
-      set({ currentEstimateError: message, currentEstimateLoading: false });
+    } catch (error) {
+      console.error("Error fetching estimate:", error);
+      set({
+        currentEstimateError: "Failed to fetch estimate",
+        currentEstimateLoading: false,
+      });
       return null;
     }
   },

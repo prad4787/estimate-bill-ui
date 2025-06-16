@@ -98,9 +98,9 @@ const distPath = path.join(__dirname, "../dist");
 app.use(express.static(distPath));
 
 // Catch-all route to serve index.html for client-side routing
-app.get("*", (req, res) => {
-  res.sendFile(path.join(distPath, "index.html"));
-});
+// app.get("*", (req, res) => {
+//   res.sendFile(path.join(distPath, "index.html"));
+// });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
