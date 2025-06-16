@@ -1,33 +1,38 @@
 import React from "react";
-import { Save, X } from "lucide-react";
+import { X, Save } from "lucide-react";
 import { PaymentMethod, PaymentMethodFormData } from "../../types";
 import { Form } from "../form/Form";
+import LoadingSpinner from "../ui/LoadingSpinner";
 
 interface PaymentMethodFormProps {
   initialData?: PaymentMethod;
   onSubmit: (data: PaymentMethodFormData) => void;
+  onCancel: () => void;
 }
 
 const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
   initialData,
   onSubmit,
+  onCancel,
 }) => {
   const initialValues: PaymentMethodFormData = {
-    type: initialData?.type || "bank",
+    type: initialData?.type || "cash",
     name: initialData?.name || "",
     accountName: initialData?.accountName || "",
     accountNumber: initialData?.accountNumber || "",
-    balance: initialData?.balance?.toString() || "0",
-    isDefault: initialData?.isDefault || false,
+    balance: initialData?.balance?.toString() || "0.00",
   };
 
-  const validateForm = (values: PaymentMethodFormData) => {
+  const validateForm = (
+    values: PaymentMethodFormData
+  ): Record<string, string> => {
     const errors: Record<string, string> = {};
 
     if (!values.name?.trim()) {
-      errors.name = "Payment method name is required";
+      errors.name = "Name is required";
     }
 
+    // Only validate account details for bank and wallet types
     if (values.type === "bank" || values.type === "wallet") {
       if (!values.accountName?.trim()) {
         errors.accountName = "Account name is required";
@@ -38,11 +43,9 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
     }
 
     if (values.balance) {
-      const balance = Number(values.balance);
-      if (isNaN(balance)) {
-        errors.balance = "Balance must be a valid number";
-      } else if (balance < 0) {
-        errors.balance = "Balance cannot be negative";
+      const balanceNum = parseFloat(values.balance);
+      if (isNaN(balanceNum)) {
+        errors.balance = "Invalid balance amount";
       }
     }
 
@@ -79,30 +82,23 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                   className={`form-input ${
                     errors.type && touched.type ? "error" : ""
                   }`}
-                  disabled={
-                    !!initialData &&
-                    (initialData.type === "cash" ||
-                      initialData.type === "cheque")
-                  }
+                  disabled={!!initialData && initialData.type === "cash"}
                 >
                   <option value="cash">Cash</option>
                   <option value="bank">Bank Account</option>
                   <option value="wallet">E-Wallet</option>
-                  <option value="cheque">Cheque</option>
                 </select>
                 {errors.type && touched.type && (
-                  <p className="mt-2 text-sm text-red-600 flex items-center">
-                    <X size={14} className="mr-1" />
+                  <p className="form-error">
+                    <X size={14} className="mr-1.5" />
                     {errors.type}
                   </p>
                 )}
-                {initialData &&
-                  (initialData.type === "cash" ||
-                    initialData.type === "cheque") && (
-                    <p className="mt-2 text-sm text-gray-500">
-                      Cannot change type for default payment methods
-                    </p>
-                  )}
+                {initialData && initialData.type === "cash" && (
+                  <p className="form-helper">
+                    Cannot change type for default payment methods
+                  </p>
+                )}
               </div>
 
               <div>
@@ -122,8 +118,8 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                   placeholder="Enter payment method name"
                 />
                 {errors.name && touched.name && (
-                  <p className="mt-2 text-sm text-red-600 flex items-center">
-                    <X size={14} className="mr-1" />
+                  <p className="form-error">
+                    <X size={14} className="mr-1.5" />
                     {errors.name}
                   </p>
                 )}
@@ -148,8 +144,8 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                       placeholder="Enter account holder name"
                     />
                     {errors.accountName && touched.accountName && (
-                      <p className="mt-2 text-sm text-red-600 flex items-center">
-                        <X size={14} className="mr-1" />
+                      <p className="form-error">
+                        <X size={14} className="mr-1.5" />
                         {errors.accountName}
                       </p>
                     )}
@@ -174,8 +170,8 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                       placeholder="Enter account number"
                     />
                     {errors.accountNumber && touched.accountNumber && (
-                      <p className="mt-2 text-sm text-red-600 flex items-center">
-                        <X size={14} className="mr-1" />
+                      <p className="form-error">
+                        <X size={14} className="mr-1.5" />
                         {errors.accountNumber}
                       </p>
                     )}
@@ -193,7 +189,7 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                     Current Balance
                   </label>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">
+                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted">
                       $
                     </span>
                     <input
@@ -210,55 +206,26 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
                     />
                   </div>
                   {errors.balance && touched.balance && (
-                    <p className="mt-2 text-sm text-red-600 flex items-center">
-                      <X size={14} className="mr-1" />
+                    <p className="form-error">
+                      <X size={14} className="mr-1.5" />
                       {errors.balance}
                     </p>
                   )}
-                  <p className="mt-2 text-sm text-gray-500">
+                  <p className="form-helper">
                     Enter the current balance for this payment method
                   </p>
-                </div>
-              )}
-
-              {values.type === "cheque" && (
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
-                  <p className="text-sm text-blue-800">
-                    Cheque payments don't require additional setup. This method
-                    will be available for receipt transactions.
-                  </p>
-                </div>
-              )}
-
-              {!initialData && (
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="isDefault"
-                    name="isDefault"
-                    checked={values.isDefault}
-                    onChange={handleChange}
-                    className="form-checkbox h-4 w-4 text-primary-600"
-                  />
-                  <label
-                    htmlFor="isDefault"
-                    className="ml-2 text-sm text-gray-700"
-                  >
-                    Set as default payment method
-                  </label>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
+          <div className="mt-8 flex justify-end gap-3">
             <button
               type="button"
-              onClick={() => window.history.back()}
+              onClick={onCancel}
               className="btn btn-outline"
               disabled={isSubmitting}
             >
-              <X size={18} />
               Cancel
             </button>
             <button
@@ -268,13 +235,15 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
             >
               {isSubmitting ? (
                 <>
-                  <div className="spinner" />
-                  Saving...
+                  <div className="w-4 h-4">
+                    <LoadingSpinner />
+                  </div>
+                  <span className="ml-2">Saving...</span>
                 </>
               ) : (
                 <>
-                  <Save size={18} />
-                  {initialData ? "Update Payment Method" : "Add Payment Method"}
+                  <Save size={18} className="mr-1.5" />
+                  {initialData ? "Update Method" : "Add Method"}
                 </>
               )}
             </button>

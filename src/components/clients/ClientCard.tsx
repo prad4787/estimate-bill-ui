@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Edit2, Trash2, MapPin, FileText, Calendar, Eye } from "lucide-react";
+import { Eye, Edit2, Trash2, FileText, MapPin } from "lucide-react";
 import { Client } from "../../types";
 
 interface ClientCardProps {
@@ -9,20 +9,13 @@ interface ClientCardProps {
 }
 
 const ClientCard: React.FC<ClientCardProps> = ({ client, onDelete }) => {
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    }).format(date);
-  };
-
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | string) => {
+    const numericAmount =
+      typeof amount === "string" ? parseFloat(amount) : amount;
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
-    }).format(amount);
+    }).format(numericAmount);
   };
 
   const handleDelete = () => {
@@ -32,52 +25,47 @@ const ClientCard: React.FC<ClientCardProps> = ({ client, onDelete }) => {
   };
 
   return (
-    <div className="card animate-fade-in">
+    <div className="card">
       <div className="card-body">
-        <div className="flex justify-between items-start mb-4">
-          <div className="flex-1">
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              {client.name}
-            </h3>
-
-            <div className="space-y-2">
+        <div className="flex items-start justify-between">
+          <div className="flex-1 min-w-0">
+            <h3 className="card-title">{client.name}</h3>
+            <div className="mt-2 flex flex-wrap gap-3">
               {client.panVat && (
-                <div className="flex items-center text-sm text-gray-600">
-                  <FileText size={16} className="mr-2 text-gray-400" />
+                <div className="flex items-center text-sm text-secondary">
+                  <FileText size={14} className="mr-1.5" />
                   <span>{client.panVat}</span>
                 </div>
               )}
-
               {client.address && (
-                <div className="flex items-center text-sm text-gray-600">
-                  <MapPin size={16} className="mr-2 text-gray-400" />
-                  <span className="line-clamp-2">{client.address}</span>
+                <div className="flex items-center text-sm text-secondary">
+                  <MapPin size={14} className="mr-1.5" />
+                  <span className="truncate max-w-[200px]">
+                    {client.address}
+                  </span>
                 </div>
               )}
-
-              <div className="flex items-center text-sm text-gray-500">
-                <Calendar size={16} className="mr-2 text-gray-400" />
-                <span>Added {formatDate(client.createdAt)}</span>
-              </div>
             </div>
           </div>
 
           <div className="text-right ml-4">
-            <div className="text-2xl font-bold text-gray-900 mb-1">
+            <div className="text-xl font-semibold text-primary mb-1">
               {formatCurrency(client.openingBalance)}
             </div>
-            <div className="badge badge-primary">Opening Balance</div>
+            <div className="badge badge-primary badge-text">
+              Opening Balance
+            </div>
           </div>
         </div>
       </div>
 
       <div className="card-footer flex justify-between items-center">
         <div>
-          <span className="text-xs text-gray-500 font-medium">
+          <span className="text-xs text-muted font-medium">
             ID: {client.id.toString().substring(0, 8)}...
           </span>
         </div>
-        <div className="flex space-x-1">
+        <div className="flex space-x-1.5">
           <Link
             to={`/clients/view/${client.id}`}
             className="action-btn action-btn-primary"

@@ -1,0 +1,139 @@
+/* Typography System */
+
+/* Base text styles */
+.text-xs {
+    font-size: 0.75rem;
+    /* 12px */
+    line-height: 1.25rem;
+    /* 20px */
+}
+
+.text-sm {
+    font-size: 0.875rem;
+    /* 14px */
+    line-height: 1.375rem;
+    /* 22px */
+}
+
+.text-base {
+    font-size: 0.9375rem;
+    /* 15px */
+    line-height: 1.5rem;
+    /* 24px */
+}
+
+.text-lg {
+    font-size: 1.125rem;
+    /* 18px */
+    line-height: 1.75rem;
+    /* 28px */
+}
+
+.text-xl {
+    font-size: 1.25rem;
+    /* 20px */
+    line-height: 1.875rem;
+    /* 30px */
+}
+
+.text-2xl {
+    font-size: 1.5rem;
+    /* 24px */
+    line-height: 2rem;
+    /* 32px */
+}
+
+/* Font weights */
+.font-normal {
+    font-weight: 400;
+}
+
+.font-medium {
+    font-weight: 500;
+}
+
+.font-semibold {
+    font-weight: 600;
+}
+
+.font-bold {
+    font-weight: 700;
+}
+
+/* Text colors */
+.text-primary {
+    color: #1a1a1a;
+}
+
+.text-secondary {
+    color: #4b5563;
+}
+
+.text-muted {
+    color: #6b7280;
+}
+
+.text-light {
+    color: #9ca3af;
+}
+
+/* Form labels */
+.form-label {
+    @apply text-sm font-medium text-primary mb-1.5 block;
+}
+
+/* Form helper text */
+.form-helper {
+    @apply text-xs text-muted mt-1.5;
+}
+
+/* Form error text */
+.form-error {
+    @apply text-xs text-red-600 mt-1.5 flex items-center;
+}
+
+/* Card titles */
+.card-title {
+    @apply text-lg font-semibold text-primary;
+}
+
+.card-subtitle {
+    @apply text-sm text-secondary mt-0.5;
+}
+
+/* Modal titles */
+.modal-title {
+    @apply text-xl font-semibold text-primary;
+}
+
+.modal-subtitle {
+    @apply text-sm text-secondary mt-1;
+}
+
+/* Badge text */
+.badge-text {
+    @apply text-xs font-medium;
+}
+
+/* Button text */
+.btn-text {
+    @apply text-sm font-medium;
+}
+
+/* Table text */
+.table-header {
+    @apply text-sm font-medium text-secondary;
+}
+
+.table-cell {
+    @apply text-sm text-primary;
+}
+
+/* List item text */
+.list-item-title {
+    @apply text-base font-medium text-primary;
+}
+
+.list-item-subtitle {
+    @apply text-sm text-secondary mt-0.5;
+}
