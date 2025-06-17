@@ -1,11 +1,5 @@
 import { create } from "zustand";
-import {
-  Stock,
-  StockFormData,
-  ApiError,
-  Pagination,
-  ApiResponse,
-} from "../types";
+import { Stock, StockFormData, ApiError, Pagination } from "../types";
 import { api } from "../api/instance";
 
 interface StockState {
@@ -32,20 +26,6 @@ interface StockState {
   getStock: (id: string) => Promise<Stock | null>;
 }
 
-interface StockResponse {
-  data: Stock;
-}
-
-interface StockStatsResponse {
-  data: {
-    total: number;
-    tracked: number;
-    untracked: number;
-    lowStock: number;
-    outOfStock: number;
-  };
-}
-
 export const useStockStore = create<StockState>((set) => ({
   stocks: [],
   loading: false,
@@ -56,14 +36,14 @@ export const useStockStore = create<StockState>((set) => ({
   fetchStocks: async (search = "", page = 1, limit = 10) => {
     set({ loading: true, error: null });
     try {
-      const res = await api.get<ApiResponse<Stock[]>>(
+      const res = await api.get<Stock[]>(
         `/stocks?search=${search}&page=${page}&limit=${limit}`
       );
 
       console.log({ res });
       if (res.success) {
         set({
-          stocks: res.data,
+          stocks: res.data as Stock[],
           pagination: res.pagination,
           loading: false,
         });
@@ -81,9 +61,23 @@ export const useStockStore = create<StockState>((set) => ({
 
   fetchStockStats: async () => {
     try {
-      const res = await api.get<StockStatsResponse>("/stocks/stats");
+      const res = await api.get<{
+        total: number;
+        tracked: number;
+        untracked: number;
+        lowStock: number;
+        outOfStock: number;
+      }>("/stocks/stats");
       if (res.success) {
-        set({ stats: res.data.data });
+        set({
+          stats: res.data as {
+            total: number;
+            tracked: number;
+            untracked: number;
+            lowStock: number;
+            outOfStock: number;
+          },
+        });
       } else {
         set({ error: res.message || "Failed to fetch stock stats" });
       }
@@ -95,13 +89,11 @@ export const useStockStore = create<StockState>((set) => ({
 
   addStock: async (stockData): Promise<Stock> => {
     try {
-      const res = await api.post<ApiResponse<Stock>, StockFormData>(
-        "/stocks",
-        stockData
-      );
+      const res = await api.post<Stock, StockFormData>("/stocks", stockData);
       if (res.success) {
-        set((state) => ({ stocks: [...state.stocks, res.data.data] }));
-        return res.data.data;
+        const newStock = res.data as Stock;
+        set((state) => ({ stocks: [...state.stocks, newStock] }));
+        return newStock;
       } else {
         throw new Error(res.message || "Failed to create stock");
       }
@@ -112,15 +104,16 @@ export const useStockStore = create<StockState>((set) => ({
 
   updateStock: async (id, stockData) => {
     try {
-      const res = await api.put<StockResponse, Partial<Stock>>(
+      const res = await api.put<Stock, Partial<Stock>>(
         `/stocks/${id}`,
         stockData
       );
       if (res.success) {
+        const updatedStock = res.data as Stock;
         set((state) => ({
-          stocks: state.stocks.map((s) => (s.id === id ? res.data.data : s)),
+          stocks: state.stocks.map((s) => (s.id === id ? updatedStock : s)),
         }));
-        return res.data.data;
+        return updatedStock;
       } else {
         throw new Error(res.message || "Failed to update stock");
       }
@@ -145,9 +138,9 @@ export const useStockStore = create<StockState>((set) => ({
 
   getStock: async (id) => {
     try {
-      const res = await api.get<StockResponse>(`/stocks/${id}`);
+      const res = await api.get<Stock>(`/stocks/${id}`);
       if (res.success) {
-        return res.data.data;
+        return res.data as Stock;
       } else {
         throw new Error(res.message || "Failed to fetch stock");
       }

@@ -107,25 +107,25 @@ async function seedOrganization() {
   const count = await OrganizationModel.count();
   if (count === 0) {
     const org = await OrganizationModel.create({
-      name: "Your Company Name",
-      address: "Your Company Address",
+      name: "",
+      address: "",
     });
 
     // Create default contacts
-    await OrganizationContactModel.bulkCreate([
-      {
-        organizationId: org.id,
-        type: "phone",
-        value: "+1 (555) 123-4567",
-        isPrimary: true,
-      },
-      {
-        organizationId: org.id,
-        type: "email",
-        value: "info@yourcompany.com",
-        isPrimary: true,
-      },
-    ]);
+    // await OrganizationContactModel.bulkCreate([
+    //   {
+    //     organizationId: org.id,
+    //     type: "phone",
+    //     value: "+1 (555) 123-4567",
+    //     isPrimary: true,
+    //   },
+    //   {
+    //     organizationId: org.id,
+    //     type: "email",
+    //     value: "info@yourcompany.com",
+    //     isPrimary: true,
+    //   },
+    // ]);
 
     console.log("Default organization seeded");
   }
@@ -164,9 +164,6 @@ const initDatabase = async () => {
   try {
     // First sync without force to check if tables exist
     await sequelize.sync();
-
-    // Then force sync to recreate tables
-    await sequelize.sync({ force: true });
 
     // Seed in correct order
     await seedAdmin();

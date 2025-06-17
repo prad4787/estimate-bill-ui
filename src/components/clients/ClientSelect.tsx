@@ -17,7 +17,7 @@ export default function ClientSelect({
   onClientCreated,
 }: ClientSelectProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [showClientSearch, setShowClientSearch] = useState(true);
+  const [showClientSearch, setShowClientSearch] = useState(false);
   const [showClientModal, setShowClientModal] = useState(false);
 
   const filteredClients = clients.filter(

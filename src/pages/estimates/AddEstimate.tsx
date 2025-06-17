@@ -60,7 +60,7 @@ const AddEstimate: React.FC = () => {
   const handleCreateStock = async (name: string): Promise<SelectOption> => {
     const newStock = await addStock({
       name,
-      quantity: null, // New items are untracked by default
+      quantity: "", // New items are untracked by default
     });
 
     return {
@@ -304,9 +304,10 @@ const AddEstimate: React.FC = () => {
                                 (opt) => opt.name === item.item
                               ) || null
                             }
-                            onChange={(option) =>
-                              handleItemChange(index, "stockOption", option)
-                            }
+                            onChange={(option) => {
+                              console.log("Selected option:", option);
+                              handleItemChange(index, "stockOption", option);
+                            }}
                             onCreateNew={handleCreateStock}
                             placeholder="Select or create item..."
                             searchPlaceholder="Search items or type to create..."

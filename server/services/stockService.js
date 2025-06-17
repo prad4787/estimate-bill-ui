@@ -34,9 +34,10 @@ exports.getStock = async (id) => {
 };
 
 exports.createStock = async (data) => {
-  // If quantity is null, ensure status is untracked
-  if (data.quantity === null) {
+  // If quantity is empty string or null, ensure status is untracked and set quantity to null
+  if (data.quantity === "" || data.quantity === null) {
     data.status = "untracked";
+    data.quantity = null;
   }
   return StockModel.create(data);
 };
@@ -45,9 +46,10 @@ exports.updateStock = async (id, data) => {
   const stock = await StockModel.findByPk(id);
   if (!stock) return null;
 
-  // If quantity is being set to null, ensure status is untracked
-  if (data.quantity === null) {
+  // If quantity is empty string or null, ensure status is untracked and set quantity to null
+  if (data.quantity === "" || data.quantity === null) {
     data.status = "untracked";
+    data.quantity = null;
   }
 
   await stock.update(data);
