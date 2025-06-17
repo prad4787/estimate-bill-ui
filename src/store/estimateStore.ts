@@ -92,7 +92,7 @@ export const useEstimateStore = create<EstimateState>((set) => ({
 
   deleteEstimate: async (id: string) => {
     try {
-      const res = await api.delete<{ message: string }>(`/estimates/${id}`);
+      const res = await api.delete<{ message: string }>(`/bills/${id}`);
       if (res.success) {
         set((state) => ({
           estimates: state.estimates.filter((e) => e.id !== id),
@@ -109,7 +109,7 @@ export const useEstimateStore = create<EstimateState>((set) => ({
   getEstimate: async (id: string): Promise<Estimate | null> => {
     set({ currentEstimateLoading: true, currentEstimateError: null });
     try {
-      const res = await api.get<Estimate>(`/estimates/${id}`);
+      const res = await api.get<Estimate>(`/bills/${id}`);
       if (res.success) {
         set({ currentEstimate: res.data, currentEstimateLoading: false });
         return res.data;

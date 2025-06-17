@@ -54,10 +54,10 @@ exports.updateOrganization = async (req, res, next) => {
     });
 
     if (!organization) {
-      return res.apiError("Organization not found", 404);
+      return res.apiError("Organization not found");
     }
 
-    res.apiSuccess(organization, "Organization updated successfully");
+    res.apiSuccess(organization);
   } catch (err) {
     next(err);
   }

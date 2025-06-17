@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Printer, Download } from "lucide-react";
+import { ArrowLeft, Printer, Download, FileText } from "lucide-react";
 import { useEstimateStore } from "../../store/estimateStore";
 import { useClientStore } from "../../store/clientStore";
 import { useOrganizationStore } from "../../store/organizationStore";
@@ -115,18 +115,22 @@ const ViewEstimate: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-fade-in">
+      {/* Action Bar - Hidden on Print */}
       <div className="flex justify-between items-center no-print">
         <button
           onClick={() => navigate("/estimates")}
-          className="inline-flex items-center text-gray-600"
+          className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
         >
           <ArrowLeft size={18} className="mr-2" />
           Back to Estimates
         </button>
         <div className="flex gap-3">
-          <button onClick={handlePrint} className="btn btn-outline">
+          <button
+            onClick={handlePrint}
+            className="btn btn-outline hover:bg-gray-50"
+          >
             <Printer size={18} />
-            Print
+            Print Estimate
           </button>
           <button onClick={handleDownload} className="btn btn-primary">
             <Download size={18} />
@@ -135,81 +139,139 @@ const ViewEstimate: React.FC = () => {
         </div>
       </div>
 
-      <div className="card" id="estimate-print">
-        <div className="card-body p-8">
-          {/* Header with Organization Info */}
-          <div className="flex justify-between items-start mb-8 pb-6 border-b border-gray-200">
+      {/* Estimate Document */}
+      <div
+        className="bg-white shadow-lg border border-gray-200 rounded-lg print:shadow-none print:border-0"
+        id="estimate-print"
+      >
+        <div className="p-8 print:p-6">
+          {/* Header Section */}
+          <div className="flex justify-between items-start mb-8 pb-6 border-b-2 border-gray-200">
             <div className="flex items-start gap-6">
               {organization.logo && (
                 <div className="flex-shrink-0">
                   <img
                     src={organization.logo}
                     alt={organization.name}
-                    className="h-16 w-auto object-contain"
+                    className="h-20 w-auto object-contain print:h-16"
                   />
                 </div>
               )}
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              <div className="flex-1">
+                <h1 className="text-3xl font-bold text-gray-900 mb-3 print:text-2xl">
                   {organization.name}
                 </h1>
-                <div className="text-sm text-gray-600 space-y-1">
-                  <p>{organization.address}</p>
+                <div className="text-sm text-gray-600 space-y-1 print:text-xs">
+                  <p className="font-medium">{organization.address}</p>
                   <div className="flex flex-wrap gap-4">
                     {organization.phones.length > 0 && (
-                      <span>Phone: {organization.phones[0]}</span>
+                      <span className="flex items-center gap-1">
+                        <span className="font-medium">Phone:</span>{" "}
+                        {organization.phones[0]}
+                      </span>
                     )}
                     {organization.emails.length > 0 && (
-                      <span>Email: {organization.emails[0]}</span>
+                      <span className="flex items-center gap-1">
+                        <span className="font-medium">Email:</span>{" "}
+                        {organization.emails[0]}
+                      </span>
                     )}
                   </div>
                   {organization.website && (
-                    <p>Website: {organization.website}</p>
+                    <p className="flex items-center gap-1">
+                      <span className="font-medium">Website:</span>{" "}
+                      {organization.website}
+                    </p>
+                  )}
+                  {organization.taxId && (
+                    <p className="flex items-center gap-1">
+                      <span className="font-medium">Tax ID:</span>{" "}
+                      {organization.taxId}
+                    </p>
                   )}
                 </div>
               </div>
             </div>
             <div className="text-right">
-              <h2 className="text-3xl font-bold text-blue-600 mb-2">
-                ESTIMATE
-              </h2>
-              <div className="text-sm text-gray-600 space-y-1">
-                <p>
-                  <span className="font-medium">Number:</span>{" "}
-                  {currentEstimate.number}
-                </p>
-                <p>
-                  <span className="font-medium">Date:</span>{" "}
-                  {formatDate(currentEstimate.date)}
-                </p>
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-lg mb-3 print:bg-blue-600 print:text-white">
+                <h2 className="text-2xl font-bold print:text-xl">ESTIMATE</h2>
+              </div>
+              <div className="text-sm text-gray-600 space-y-2 print:text-xs">
+                <div className="bg-gray-50 p-3 rounded-lg print:bg-gray-100">
+                  <p className="font-semibold text-gray-900">
+                    Estimate #: {currentEstimate.number}
+                  </p>
+                  <p className="text-gray-600">
+                    Date: {formatDate(currentEstimate.date)}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Client Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">
+          {/* Client and Organization Information */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <div className="bg-gray-50 p-6 rounded-lg print:bg-gray-100">
+              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <FileText size={20} className="text-blue-600" />
                 Bill To:
               </h3>
-              <div className="text-gray-700">
-                <p className="font-medium text-lg">{client.name}</p>
-                {client.address && <p className="mt-1">{client.address}</p>}
+              <div className="text-gray-700 space-y-2">
+                <p className="font-bold text-lg text-gray-900">{client.name}</p>
+                {client.address && (
+                  <p className="text-gray-600">{client.address}</p>
+                )}
                 {client.panVat && (
-                  <p className="mt-1">PAN/VAT: {client.panVat}</p>
+                  <p className="text-gray-600">
+                    <span className="font-medium">PAN/VAT:</span>{" "}
+                    {client.panVat}
+                  </p>
+                )}
+                {client.phone && (
+                  <p className="text-gray-600">
+                    <span className="font-medium">Phone:</span> {client.phone}
+                  </p>
+                )}
+                {client.email && (
+                  <p className="text-gray-600">
+                    <span className="font-medium">Email:</span> {client.email}
+                  </p>
                 )}
               </div>
             </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">
+            <div className="bg-gray-50 p-6 rounded-lg print:bg-gray-100">
+              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <FileText size={20} className="text-blue-600" />
                 From:
               </h3>
-              <div className="text-gray-700">
-                <p className="font-medium">{organization.name}</p>
-                <p>{organization.address}</p>
-                {organization.taxId && <p>Tax ID: {organization.taxId}</p>}
+              <div className="text-gray-700 space-y-2">
+                <p className="font-bold text-lg text-gray-900">
+                  {organization.name}
+                </p>
+                <p className="text-gray-600">{organization.address}</p>
+                {organization.taxId && (
+                  <p className="text-gray-600">
+                    <span className="font-medium">Tax ID:</span>{" "}
+                    {organization.taxId}
+                  </p>
+                )}
                 {organization.registrationNumber && (
-                  <p>Reg. No: {organization.registrationNumber}</p>
+                  <p className="text-gray-600">
+                    <span className="font-medium">Reg. No:</span>{" "}
+                    {organization.registrationNumber}
+                  </p>
+                )}
+                {organization.phones.length > 0 && (
+                  <p className="text-gray-600">
+                    <span className="font-medium">Phone:</span>{" "}
+                    {organization.phones[0]}
+                  </p>
+                )}
+                {organization.emails.length > 0 && (
+                  <p className="text-gray-600">
+                    <span className="font-medium">Email:</span>{" "}
+                    {organization.emails[0]}
+                  </p>
                 )}
               </div>
             </div>
@@ -217,22 +279,22 @@ const ViewEstimate: React.FC = () => {
 
           {/* Items Table */}
           <div className="overflow-x-auto mb-8">
-            <table className="w-full border border-gray-200">
+            <table className="w-full border-2 border-gray-200 rounded-lg overflow-hidden">
               <thead>
-                <tr className="bg-gray-50">
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">
+                <tr className="bg-gradient-to-r from-gray-100 to-gray-200">
+                  <th className="px-4 py-4 text-left text-sm font-bold text-gray-700 border-b-2 border-gray-300">
                     SN
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">
-                    Item
+                  <th className="px-4 py-4 text-left text-sm font-bold text-gray-700 border-b-2 border-gray-300">
+                    Item Description
                   </th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 border-b border-gray-200">
+                  <th className="px-4 py-4 text-center text-sm font-bold text-gray-700 border-b-2 border-gray-300">
                     Quantity
                   </th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700 border-b border-gray-200">
+                  <th className="px-4 py-4 text-right text-sm font-bold text-gray-700 border-b-2 border-gray-300">
                     Rate
                   </th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700 border-b border-gray-200">
+                  <th className="px-4 py-4 text-right text-sm font-bold text-gray-700 border-b-2 border-gray-300">
                     Total
                   </th>
                 </tr>
@@ -241,70 +303,66 @@ const ViewEstimate: React.FC = () => {
                 {currentEstimate.items.map((item, index) => (
                   <React.Fragment key={index}>
                     <tr className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                      <td className="px-4 py-3 text-sm text-gray-900 border-b border-gray-200">
+                      <td className="px-4 py-4 text-sm text-gray-900 border-b border-gray-200 font-medium">
                         {item.sn}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 border-b border-gray-200 font-medium">
-                        {item.item}
+                      <td className="px-4 py-4 text-sm text-gray-900 border-b border-gray-200">
+                        <div>
+                          <p className="font-semibold text-gray-900">
+                            {item.item}
+                          </p>
+                          {item.description && (
+                            <p className="text-gray-600 text-xs mt-1 italic">
+                              {item.description}
+                            </p>
+                          )}
+                        </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 border-b border-gray-200 text-center">
+                      <td className="px-4 py-4 text-sm text-gray-900 border-b border-gray-200 text-center font-medium">
                         {item.quantity}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 border-b border-gray-200 text-right">
+                      <td className="px-4 py-4 text-sm text-gray-900 border-b border-gray-200 text-right font-medium">
                         {formatCurrency(item.rate)}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 border-b border-gray-200 text-right font-medium">
+                      <td className="px-4 py-4 text-sm text-gray-900 border-b border-gray-200 text-right font-bold">
                         {formatCurrency(item.total)}
                       </td>
                     </tr>
-                    {item.description && (
-                      <tr
-                        className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
-                      >
-                        <td></td>
-                        <td
-                          colSpan={4}
-                          className="px-4 py-2 text-sm text-gray-600 italic border-b border-gray-200"
-                        >
-                          {item.description}
-                        </td>
-                      </tr>
-                    )}
                   </React.Fragment>
                 ))}
               </tbody>
             </table>
           </div>
 
-          {/* Totals */}
+          {/* Totals Section */}
           <div className="flex justify-end">
-            <div className="w-80">
-              <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                <div className="space-y-3">
+            <div className="w-96">
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-6 rounded-lg border-2 border-gray-200">
+                <div className="space-y-4">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Subtotal:</span>
-                    <span className="font-medium text-gray-900">
+                    <span className="text-gray-600 font-medium">Subtotal:</span>
+                    <span className="font-bold text-gray-900">
                       {formatCurrency(currentEstimate.subTotal)}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">
+                    <span className="text-gray-600 font-medium">
                       Discount
                       {currentEstimate.discountType === "rate"
                         ? ` (${currentEstimate.discountValue}%)`
                         : ""}
                       :
                     </span>
-                    <span className="font-medium text-gray-900">
+                    <span className="font-bold text-red-600">
                       -{formatCurrency(currentEstimate.discountAmount)}
                     </span>
                   </div>
-                  <div className="border-t border-gray-300 pt-3">
+                  <div className="border-t-2 border-gray-300 pt-4">
                     <div className="flex justify-between">
-                      <span className="text-lg font-semibold text-gray-900">
-                        Total:
+                      <span className="text-lg font-bold text-gray-900">
+                        Total Amount:
                       </span>
-                      <span className="text-xl font-bold text-blue-600">
+                      <span className="text-2xl font-bold text-blue-600">
                         {formatCurrency(currentEstimate.total)}
                       </span>
                     </div>
@@ -315,18 +373,34 @@ const ViewEstimate: React.FC = () => {
           </div>
 
           {/* Footer */}
-          <div className="mt-12 pt-6 border-t border-gray-200 text-center">
-            <div className="text-sm text-gray-600">
-              <p className="mb-2">Thank you for your business!</p>
-              <div className="flex justify-center gap-6 text-xs">
+          <div className="mt-12 pt-6 border-t-2 border-gray-200">
+            <div className="text-center">
+              <div className="text-sm text-gray-600 mb-4">
+                <p className="text-lg font-semibold text-gray-900 mb-2">
+                  Thank you for your business!
+                </p>
+                <p className="text-gray-600">
+                  This estimate is valid for 30 days from the date of issue.
+                </p>
+              </div>
+              <div className="flex justify-center gap-6 text-xs text-gray-500 print:text-xs">
                 {organization.phones.length > 0 && (
-                  <span>Phone: {organization.phones[0]}</span>
+                  <span className="flex items-center gap-1">
+                    <span className="font-medium">Phone:</span>{" "}
+                    {organization.phones[0]}
+                  </span>
                 )}
                 {organization.emails.length > 0 && (
-                  <span>Email: {organization.emails[0]}</span>
+                  <span className="flex items-center gap-1">
+                    <span className="font-medium">Email:</span>{" "}
+                    {organization.emails[0]}
+                  </span>
                 )}
                 {organization.website && (
-                  <span>Web: {organization.website}</span>
+                  <span className="flex items-center gap-1">
+                    <span className="font-medium">Web:</span>{" "}
+                    {organization.website}
+                  </span>
                 )}
               </div>
             </div>
