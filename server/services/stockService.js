@@ -1,4 +1,4 @@
-const { StockModel } = require("../models");
+const { StockModel, BillItemModel, BillModel } = require("../models");
 const { Op } = require("sequelize");
 
 exports.listStocks = async ({ page = 1, limit = 10, search = "" }) => {
@@ -112,5 +112,35 @@ exports.getStockStats = async () => {
     untracked: untrackedCount,
     lowStock: lowStockCount,
     outOfStock: outOfStockCount,
+  };
+};
+
+exports.getStockBillItems = async (stockId, { page = 1, limit = 10 } = {}) => {
+  const offset = (page - 1) * limit;
+
+  const { count, rows } = await BillItemModel.findAndCountAll({
+    where: {
+      stockId: stockId,
+    },
+    include: [
+      {
+        model: BillModel,
+        as: "bill",
+        attributes: ["number", "date"],
+      },
+    ],
+    order: [["createdAt", "DESC"]],
+    offset: Number(offset),
+    limit: Number(limit),
+  });
+
+  return {
+    data: rows,
+    pagination: {
+      total: count,
+      page: Number(page),
+      limit: Number(limit),
+      totalPages: Math.ceil(count / limit),
+    },
   };
 };

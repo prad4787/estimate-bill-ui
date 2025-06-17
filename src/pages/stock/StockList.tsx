@@ -56,15 +56,6 @@ const StockList: React.FC = () => {
     }
   };
 
-  // Filter stocks based on filter type
-  const filteredStocks = stocks.filter((stock) => {
-    if (!stock) return false; // Skip undefined/null stocks
-    if (filterType === "all") return true;
-    if (filterType === "tracked") return stock.status === "tracked";
-    if (filterType === "untracked") return stock.status === "untracked";
-    return true;
-  });
-
   if (error) {
     return (
       <div className="card">
@@ -223,7 +214,7 @@ const StockList: React.FC = () => {
             <p className="mt-4 text-gray-600">Loading stocks...</p>
           </div>
         </div>
-      ) : filteredStocks.length === 0 ? (
+      ) : (stocks || []).length === 0 ? (
         <EmptyState
           title="No stock items found"
           description="Add your first stock item to get started with inventory management."
@@ -238,7 +229,7 @@ const StockList: React.FC = () => {
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredStocks.map((stock, index) => {
+            {(stocks || []).map((stock, index) => {
               if (!stock) return null; // Skip undefined stock items
               return (
                 <div

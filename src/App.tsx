@@ -25,6 +25,7 @@ import OrganizationSettings from "./pages/settings/OrganizationSettings";
 import NotFound from "./pages/NotFound";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import ViewStock from "./pages/stock/ViewStock";
 
 function App() {
   return (
@@ -56,6 +57,7 @@ function App() {
             <Route index element={<StockList />} />
             <Route path="add" element={<AddStock />} />
             <Route path="edit/:id" element={<EditStock />} />
+            <Route path="view/:id" element={<ViewStock />} />
           </Route>
           <Route path="payments">
             <Route index element={<PaymentMethodList />} />

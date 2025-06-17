@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Edit2, Trash2, Package, Calendar } from "lucide-react";
+import { Edit2, Trash2, Package, Calendar, EyeIcon } from "lucide-react";
 import { Stock } from "../../types";
 
 interface StockCardProps {
@@ -49,9 +49,12 @@ const StockCard: React.FC<StockCardProps> = ({ stock, onDelete }) => {
       <div className="card-body">
         <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            <Link
+              to={`/stock/view/${stock.id}`}
+              className="text-xl font-semibold text-gray-900 mb-2 hover:text-blue-600 transition-colors cursor-pointer block"
+            >
               {stock.name}
-            </h3>
+            </Link>
 
             <div className="space-y-2">
               <div className="flex items-center text-sm text-gray-600">
@@ -83,10 +86,17 @@ const StockCard: React.FC<StockCardProps> = ({ stock, onDelete }) => {
       <div className="card-footer flex justify-between items-center">
         <div>
           <span className="text-xs text-gray-500 font-medium">
-            ID: {(stock.id || "").toString().substring(0, 8)}...
+            ID: {stock.id}
           </span>
         </div>
         <div className="flex space-x-1">
+          <Link
+            to={`/stock/view/${stock.id}`}
+            className="action-btn action-btn-primary"
+            title="View stock details"
+          >
+            <EyeIcon size={16} />
+          </Link>
           <Link
             to={`/stock/edit/${stock.id}`}
             className="action-btn action-btn-primary"
@@ -94,6 +104,7 @@ const StockCard: React.FC<StockCardProps> = ({ stock, onDelete }) => {
           >
             <Edit2 size={16} />
           </Link>
+
           <button
             onClick={handleDelete}
             className="action-btn action-btn-danger"

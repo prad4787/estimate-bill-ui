@@ -1,6 +1,13 @@
 import { create } from "zustand";
-import { Stock, StockFormData, ApiError, Pagination } from "../types";
+import { Stock, StockFormData, ApiError, Pagination, BillItem } from "../types";
 import { api } from "../api/instance";
+
+interface StockBillItem extends BillItem {
+  bill?: {
+    number: string;
+    date: string;
+  };
+}
 
 interface StockState {
   stocks: Stock[];
@@ -14,12 +21,21 @@ interface StockState {
     lowStock: number;
     outOfStock: number;
   } | null;
+  stockBillItems: {
+    data: StockBillItem[];
+    pagination: Pagination | null;
+  };
   fetchStocks: (
     search?: string,
     page?: number,
     limit?: number
   ) => Promise<void>;
   fetchStockStats: () => Promise<void>;
+  fetchStockBillItems: (
+    stockId: string,
+    page?: number,
+    limit?: number
+  ) => Promise<void>;
   addStock: (stock: StockFormData) => Promise<Stock>;
   updateStock: (id: string, stock: Partial<Stock>) => Promise<Stock | null>;
   deleteStock: (id: string) => Promise<boolean>;
@@ -32,6 +48,10 @@ export const useStockStore = create<StockState>((set) => ({
   error: null,
   pagination: null,
   stats: null,
+  stockBillItems: {
+    data: [],
+    pagination: null,
+  },
 
   fetchStocks: async (search = "", page = 1, limit = 10) => {
     set({ loading: true, error: null });
@@ -83,6 +103,27 @@ export const useStockStore = create<StockState>((set) => ({
     } catch (error) {
       console.error("Error fetching stock stats:", error);
       set({ error: "Failed to fetch stock stats" });
+    }
+  },
+
+  fetchStockBillItems: async (stockId, page = 1, limit = 10) => {
+    try {
+      const res = await api.get<StockBillItem[]>(
+        `/stocks/${stockId}/bill-items?page=${page}&limit=${limit}`
+      );
+      if (res.success) {
+        set({
+          stockBillItems: {
+            data: res.data as StockBillItem[],
+            pagination: res.pagination || null,
+          },
+        });
+      } else {
+        throw new Error(res.message || "Failed to fetch stock bill items");
+      }
+    } catch (error) {
+      console.error("Error fetching stock bill items:", error);
+      set({ error: "Failed to fetch stock bill items" });
     }
   },
 

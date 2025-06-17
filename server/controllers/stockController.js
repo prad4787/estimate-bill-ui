@@ -61,3 +61,16 @@ exports.getStockStats = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.getStockBillItems = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+    const result = await stockService.getStockBillItems(req.params.id, {
+      page,
+      limit,
+    });
+    res.apiPaginated(result.data, result.pagination);
+  } catch (err) {
+    next(err);
+  }
+};
