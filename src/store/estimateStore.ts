@@ -24,15 +24,6 @@ interface EstimateState {
   getEstimate: (id: string) => Promise<Estimate | null>;
 }
 
-interface EstimateListResponse {
-  data: Estimate[];
-  pagination: Pagination;
-}
-
-interface EstimateResponse {
-  data: Estimate;
-}
-
 export const useEstimateStore = create<EstimateState>((set) => ({
   estimates: [],
   loading: false,
@@ -45,13 +36,13 @@ export const useEstimateStore = create<EstimateState>((set) => ({
   fetchEstimates: async ({ page = 1, limit = 10, search = "" } = {}) => {
     set({ loading: true, error: null });
     try {
-      const res = await api.get<EstimateListResponse>(
-        `/estimates?page=${page}&limit=${limit}&search=${search}`
+      const res = await api.get<Estimate[]>(
+        `/bills?page=${page}&limit=${limit}&search=${search}`
       );
       if (res.success) {
         set({
-          estimates: res.data.data,
-          pagination: res.data.pagination,
+          estimates: res.data,
+          pagination: res.pagination,
           loading: false,
         });
       } else {
@@ -68,13 +59,10 @@ export const useEstimateStore = create<EstimateState>((set) => ({
 
   addEstimate: async (data: EstimateFormData): Promise<Estimate> => {
     try {
-      const res = await api.post<EstimateResponse, EstimateFormData>(
-        "/estimates",
-        data
-      );
+      const res = await api.post<Estimate, EstimateFormData>("/bills", data);
       if (res.success) {
-        set((state) => ({ estimates: [...state.estimates, res.data.data] }));
-        return res.data.data;
+        set((state) => ({ estimates: [...state.estimates, res.data] }));
+        return res.data;
       } else {
         throw new Error(res.message || "Failed to create estimate");
       }
@@ -85,17 +73,15 @@ export const useEstimateStore = create<EstimateState>((set) => ({
 
   updateEstimate: async (id: string, data: Partial<Estimate>) => {
     try {
-      const res = await api.put<EstimateResponse, Partial<Estimate>>(
-        `/estimates/${id}`,
+      const res = await api.put<Estimate, Partial<Estimate>>(
+        `/bills/${id}`,
         data
       );
       if (res.success) {
         set((state) => ({
-          estimates: state.estimates.map((e) =>
-            e.id === id ? res.data.data : e
-          ),
+          estimates: state.estimates.map((e) => (e.id === id ? res.data : e)),
         }));
-        return res.data.data;
+        return res.data;
       } else {
         throw new Error(res.message || "Failed to update estimate");
       }
@@ -123,10 +109,10 @@ export const useEstimateStore = create<EstimateState>((set) => ({
   getEstimate: async (id: string): Promise<Estimate | null> => {
     set({ currentEstimateLoading: true, currentEstimateError: null });
     try {
-      const res = await api.get<EstimateResponse>(`/estimates/${id}`);
+      const res = await api.get<Estimate>(`/estimates/${id}`);
       if (res.success) {
-        set({ currentEstimate: res.data.data, currentEstimateLoading: false });
-        return res.data.data;
+        set({ currentEstimate: res.data, currentEstimateLoading: false });
+        return res.data;
       } else {
         set({
           currentEstimateError: res.message || "Failed to fetch estimate",

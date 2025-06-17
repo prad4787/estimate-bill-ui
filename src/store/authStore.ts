@@ -43,7 +43,6 @@ const loadAuthData = (): { user: User | null; token: string | null } => {
 // Save auth data to localStorage
 const saveAuthData = (user: User, token: string): void => {
   try {
-    console.log("saving auth data", { user, token });
     localStorage.setItem(AUTH_TOKEN_KEY, token);
     localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
   } catch (error) {
@@ -79,9 +78,7 @@ export const useAuthStore = create<AuthStore>((set) => {
           credentials
         );
         const { success, data } = result;
-        console.log({ result });
         if (success && data?.token && data?.user) {
-          console.log({ data });
           saveAuthData(data.user, data.token);
           set({
             user: data.user,

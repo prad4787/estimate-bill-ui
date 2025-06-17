@@ -42,7 +42,6 @@ const AddReceipt: React.FC = () => {
   }, [fetchClients]);
 
   const handleClientCreated = (newClient: Client) => {
-    console.log({ newClient });
     setSelectedClient(newClient);
     setShowClientModal(false);
     fetchClients();
@@ -333,18 +332,6 @@ const AddReceipt: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      console.log("Receipt created successfully", {
-        date,
-        clientId: selectedClient,
-        transactions: transactions.map((t) => ({
-          ...t,
-          amount: Number(t.amount),
-          paymentMethodId: t.paymentMethodId
-            ? Number(t.paymentMethodId)
-            : undefined,
-        })),
-      });
-
       await addReceipt({
         date,
         clientId: selectedClient.id,

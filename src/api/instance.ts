@@ -46,7 +46,6 @@ axiosInstance.interceptors.response.use(
       error.response.status < 500 &&
       (error.response.data as { errors: Record<string, string> })?.errors
     ) {
-      console.log({ error: error.response.data });
       return Promise.reject(error.response.data);
     }
     // Other errors
@@ -66,7 +65,6 @@ axiosInstance.interceptors.response.use(
 
 axiosInstance.interceptors.request.use((config) => {
   const token = useAuthStore.getState().token;
-  console.log({ token });
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -75,22 +73,22 @@ axiosInstance.interceptors.request.use((config) => {
 
 // axios get
 const api = {
-  async get<T>(url: string) {
+  async get<T>(url: string): Promise<ApiResponse<T>> {
     const response = await axiosInstance.get<ApiResponse<T>>(url);
     return response.data as ApiResponse<T>;
   },
 
-  async post<T, D>(url: string, data: D) {
+  async post<T, D>(url: string, data: D): Promise<ApiResponse<T>> {
     const response = await axiosInstance.post<ApiResponse<T>>(url, data);
     return response.data as ApiResponse<T>;
   },
 
-  async put<T, D>(url: string, data: D) {
+  async put<T, D>(url: string, data: D): Promise<ApiResponse<T>> {
     const response = await axiosInstance.put<ApiResponse<T>>(url, data);
     return response.data as ApiResponse<T>;
   },
 
-  async delete<T>(url: string) {
+  async delete<T>(url: string): Promise<ApiResponse<T>> {
     const response = await axiosInstance.delete<ApiResponse<T>>(url);
     return response.data as ApiResponse<T>;
   },

@@ -7,7 +7,6 @@ import {
   FileText,
   CreditCard,
   Receipt,
-  Settings,
   TrendingUp,
   Building2,
   BarChart3,

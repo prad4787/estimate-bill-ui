@@ -51,6 +51,7 @@ function App() {
             <Route path="add" element={<AddEstimate />} />
             <Route path=":id" element={<ViewEstimate />} />
           </Route>
+
           <Route path="stock">
             <Route index element={<StockList />} />
             <Route path="add" element={<AddStock />} />

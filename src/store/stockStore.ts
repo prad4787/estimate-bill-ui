@@ -40,7 +40,6 @@ export const useStockStore = create<StockState>((set) => ({
         `/stocks?search=${search}&page=${page}&limit=${limit}`
       );
 
-      console.log({ res });
       if (res.success) {
         set({
           stocks: res.data as Stock[],

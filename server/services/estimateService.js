@@ -1,5 +1,6 @@
 const { EstimateModel, ClientModel } = require("../models");
 const { Op } = require("sequelize");
+const billService = require("./billService");
 
 // Helper function to calculate totals
 const calculateTotals = (items, discountType, discountValue) => {
@@ -84,7 +85,8 @@ exports.createEstimate = async (data) => {
   const number = await generateEstimateNumber();
   const id = `estimate_${Date.now()}`;
 
-  return EstimateModel.create({
+  // Create the estimate
+  const estimate = await EstimateModel.create({
     id,
     number,
     ...data,
@@ -92,6 +94,20 @@ exports.createEstimate = async (data) => {
     discountAmount,
     total,
   });
+
+  // Also create a bill from the estimate
+  const bill = await billService.createBill({
+    date: data.date,
+    clientId: data.clientId,
+    items: data.items,
+    discountType: data.discountType,
+    discountValue: data.discountValue,
+  });
+
+  return {
+    ...estimate.toJSON(),
+    bill,
+  };
 };
 
 exports.updateEstimate = async (id, data) => {

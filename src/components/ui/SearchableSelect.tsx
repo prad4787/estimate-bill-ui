@@ -70,10 +70,13 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
+      const target = event.target as Node;
+
+      // Check if click is within the container or dropdown
+      const isInContainer = containerRef.current?.contains(target);
+      const isInDropdown = dropdownRef.current?.contains(target);
+
+      if (!isInContainer && !isInDropdown) {
         setIsOpen(false);
         setSearchTerm("");
         setHighlightedIndex(-1);
@@ -109,7 +112,6 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
   };
 
   const handleOptionSelect = async (option: SelectOption) => {
-    console.log("Selected option:", option);
     onChange(option);
     setIsOpen(false);
     setSearchTerm("");
@@ -241,10 +243,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                 role="option"
                 aria-selected={value?.id === option.id}
               >
-                <div
-                  className="flex items-center justify-between"
-                  onClick={() => handleOptionSelect(option)}
-                >
+                <div className="flex items-center justify-between">
                   {renderOption
                     ? renderOption(option)
                     : defaultRenderOption(option)}

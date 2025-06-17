@@ -3,25 +3,43 @@ const { DataTypes } = require("sequelize");
 module.exports = (sequelize) => {
   const Bill = sequelize.define("Bill", {
     id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING,
       primaryKey: true,
-      autoIncrement: true,
+    },
+    number: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
     },
     date: {
       type: DataTypes.DATE,
       allowNull: false,
-      defaultValue: DataTypes.NOW,
     },
     clientId: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING,
       allowNull: false,
-      references: {
-        model: "Clients",
-        key: "id",
-      },
+    },
+    subTotal: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+    },
+    discountType: {
+      type: DataTypes.ENUM("rate", "amount"),
+      allowNull: false,
+      defaultValue: "amount",
+    },
+    discountValue: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+      defaultValue: 0,
+    },
+    discountAmount: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+      defaultValue: 0,
     },
     total: {
-      type: DataTypes.FLOAT,
+      type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
       validate: {
         min: 0,
@@ -35,6 +53,14 @@ module.exports = (sequelize) => {
       type: DataTypes.ENUM("pending", "paid", "cancelled"),
       allowNull: false,
       defaultValue: "pending",
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
     },
   });
 

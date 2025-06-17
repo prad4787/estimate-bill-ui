@@ -167,19 +167,46 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface BillItem {
+  id: number;
+  billId: string;
+  stockId: number;
+  quantity: number;
+  rate: number;
+  total: number;
+  stock?: {
+    name: string;
+  };
+}
+
 export interface Bill {
   id: string;
-  billNumber: string;
+  number: string;
+  date: string;
   clientId: string;
-  clientName: string;
-  issueDate: string;
-  dueDate: string;
-  amount: number;
-  paidAmount: number;
-  remainingAmount: number;
-  status: "paid" | "partial" | "unpaid" | "overdue";
+  subTotal: number;
+  discountType: "rate" | "amount";
+  discountValue: number;
+  discountAmount: number;
+  total: number;
+  notes?: string;
+  status: "pending" | "paid" | "cancelled";
+  items: BillItem[];
+  client?: {
+    name: string;
+    address?: string;
+    panVat?: string;
+  };
   createdAt: string;
   updatedAt: string;
+}
+
+export interface BillFormData {
+  date: string;
+  clientId: string;
+  items: EstimateItem[];
+  discountType: "rate" | "amount";
+  discountValue: number;
 }
 
 export interface AgingBucket {
@@ -223,7 +250,7 @@ export interface ApiResponse<T> {
   status: number;
   success: boolean;
   message: string;
-  data: T | T[];
+  data: T;
   pagination?: Pagination;
 }
 

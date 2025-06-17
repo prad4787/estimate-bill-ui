@@ -9,6 +9,7 @@ const paymentMethodRoutes = require("./paymentMethod");
 const transactionRoutes = require("./transaction");
 const receiptRoutes = require("./receipts");
 const estimateRoutes = require("./estimate");
+const billRoutes = require("./bill");
 
 router.use("/auth", authRoutes);
 // router.use(requireAuth);
@@ -21,5 +22,6 @@ router.use("/transactions", transactionRoutes);
 
 router.use("/receipts", receiptRoutes);
 router.use("/estimates", estimateRoutes);
+router.use("/bills", billRoutes);
 
 module.exports = router;

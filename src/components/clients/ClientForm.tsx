@@ -80,8 +80,6 @@ const ClientForm: React.FC<ClientFormProps> = ({
     }
   };
 
-  console.log({ errors: errors.panVat });
-
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

@@ -305,7 +305,6 @@ const AddEstimate: React.FC = () => {
                               ) || null
                             }
                             onChange={(option) => {
-                              console.log("Selected option:", option);
                               handleItemChange(index, "stockOption", option);
                             }}
                             onCreateNew={handleCreateStock}

@@ -65,14 +65,11 @@ const Login: React.FC = () => {
     try {
       const success = await login(credentials);
 
-      console.log({ success });
-
       if (success) {
         toast.success("Welcome back!");
         // const from = location.state?.from?.pathname || "/";
         const from = "/";
         navigate(from, { replace: true });
-        console.log({ from });
       } else {
         toast.error("Invalid email or password");
         setErrors({

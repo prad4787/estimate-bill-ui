@@ -75,7 +75,6 @@ export const useReceiptStore = create<ReceiptState>((set) => ({
   },
 
   addReceipt: async (data: ReceiptFormData): Promise<Receipt> => {
-    console.log({ ReceiptFormData: data });
     try {
       const res = await api.post<{ data: Receipt }, ReceiptFormData>(
         "/receipts",
