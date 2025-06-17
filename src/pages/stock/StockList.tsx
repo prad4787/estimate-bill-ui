@@ -58,6 +58,7 @@ const StockList: React.FC = () => {
 
   // Filter stocks based on filter type
   const filteredStocks = stocks.filter((stock) => {
+    if (!stock) return false; // Skip undefined/null stocks
     if (filterType === "all") return true;
     if (filterType === "tracked") return stock.status === "tracked";
     if (filterType === "untracked") return stock.status === "untracked";
@@ -237,15 +238,18 @@ const StockList: React.FC = () => {
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredStocks.map((stock, index) => (
-              <div
-                key={stock.id}
-                className="animate-fade-in"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <StockCard stock={stock} onDelete={handleDelete} />
-              </div>
-            ))}
+            {filteredStocks.map((stock, index) => {
+              if (!stock) return null; // Skip undefined stock items
+              return (
+                <div
+                  key={stock.id}
+                  className="animate-fade-in"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <StockCard stock={stock} onDelete={handleDelete} />
+                </div>
+              );
+            })}
           </div>
 
           {pagination && pagination.totalPages > 1 && (

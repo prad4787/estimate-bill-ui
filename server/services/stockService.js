@@ -1,14 +1,23 @@
 const { StockModel } = require("../models");
 const { Op } = require("sequelize");
 
-exports.listStocks = async ({ page = 1, limit = 10 }) => {
+exports.listStocks = async ({ page = 1, limit = 10, search = "" }) => {
   const offset = (page - 1) * limit;
-  //
+
+  const whereClause = {};
+  if (search) {
+    whereClause.name = {
+      [Op.iLike]: `%${search}%`,
+    };
+  }
+
   const { count, rows } = await StockModel.findAndCountAll({
+    where: whereClause,
     offset: Number(offset),
     limit: Number(limit),
     order: [["id", "DESC"]],
   });
+
   return {
     data: rows,
     pagination: {

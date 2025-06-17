@@ -59,8 +59,9 @@ const EditReceipt: React.FC = () => {
     }
   }, [id, receipts, fetchClients]);
 
-  const filteredClients = clients.filter((client) =>
-    client.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredClients = clients.filter(
+    (client) =>
+      client.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false
   );
 
   const handleClientCreated = (newClient: Client) => {
@@ -132,13 +133,13 @@ const EditReceipt: React.FC = () => {
   const formatPaymentMethodDisplay = (method: PaymentMethod): string => {
     switch (method.type) {
       case "bank":
-        return `${method.bankName} - ${method.accountName} (${method.accountNumber})`;
+        return `${method.name} - ${method.accountName} (${method.accountNumber})`;
       case "wallet":
-        return `${method.walletName} - ${method.accountName} (${method.accountNumber})`;
+        return `${method.name} - ${method.accountName} (${method.accountNumber})`;
       case "cash":
-        return "Cash";
+        return method.name;
       default:
-        return "Payment Method";
+        return method.name;
     }
   };
 

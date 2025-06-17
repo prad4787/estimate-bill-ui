@@ -2,8 +2,8 @@ const stockService = require("../services/stockService");
 
 exports.listStocks = async (req, res, next) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
-    const result = await stockService.listStocks({ page, limit });
+    const { page = 1, limit = 10, search = "" } = req.query;
+    const result = await stockService.listStocks({ page, limit, search });
     res.apiPaginated(result.data, result.pagination);
   } catch (err) {
     next(err);

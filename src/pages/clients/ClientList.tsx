@@ -53,16 +53,6 @@ const ClientList: React.FC = () => {
     setClientToDelete(null);
   };
 
-  // Filter clients based on search term
-  const filteredClients = clients.filter(
-    (client) =>
-      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (client.address &&
-        client.address.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (client.panVat &&
-        client.panVat.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
   const toggleView = () => {
     setViewMode(viewMode === "grid" ? "list" : "grid");
   };
@@ -147,7 +137,7 @@ const ClientList: React.FC = () => {
             </Link>
           }
         />
-      ) : filteredClients.length === 0 ? (
+      ) : (clients || []).length === 0 ? (
         <div className="card">
           <div className="card-body text-center py-12">
             <div className="empty-state-icon mx-auto mb-4">
@@ -164,7 +154,7 @@ const ClientList: React.FC = () => {
         </div>
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredClients.map((client, index) => (
+          {(clients || []).map((client, index) => (
             <div
               key={client.id}
               className="animate-fade-in"
@@ -172,7 +162,7 @@ const ClientList: React.FC = () => {
             >
               <ClientCard
                 client={client}
-                onDelete={() => handleDeleteClick(client.id)}
+                onDelete={() => handleDeleteClick(client.id.toString())}
               />
             </div>
           ))}
@@ -180,7 +170,7 @@ const ClientList: React.FC = () => {
       ) : (
         <div className="table-container">
           <div className="divide-y divide-gray-200">
-            {filteredClients.map((client, index) => (
+            {(clients || []).map((client, index) => (
               <div
                 key={client.id}
                 className="animate-slide-in"
@@ -188,7 +178,7 @@ const ClientList: React.FC = () => {
               >
                 <ClientListItem
                   client={client}
-                  onDelete={() => handleDeleteClick(client.id)}
+                  onDelete={() => handleDeleteClick(client.id.toString())}
                 />
               </div>
             ))}
