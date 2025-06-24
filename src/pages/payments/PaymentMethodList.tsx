@@ -23,6 +23,8 @@ const PaymentMethodList: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [methodToDelete, setMethodToDelete] = useState<string | null>(null);
 
+  const hideBalance = import.meta.env.VITE_HIDE_PAYMENT_BALANCE === "true";
+
   useEffect(() => {
     fetchPaymentMethods(currentPage, ITEMS_PER_PAGE);
   }, [fetchPaymentMethods, currentPage]);
@@ -165,9 +167,11 @@ const PaymentMethodList: React.FC = () => {
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
                       Account Details
                     </th>
-                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
-                      Balance
-                    </th>
+                    {!hideBalance && (
+                      <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
+                        Balance
+                      </th>
+                    )}
                     <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
                       Status
                     </th>
@@ -198,9 +202,11 @@ const PaymentMethodList: React.FC = () => {
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                        {formatCurrency(method.balance || 0)}
-                      </td>
+                      {!hideBalance && (
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                          {formatCurrency(method.balance || 0)}
+                        </td>
+                      )}
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
                         {method.isDefault ? (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -229,9 +235,17 @@ const PaymentMethodList: React.FC = () => {
                             <Pencil size={18} />
                           </Link>
                           <button
-                            onClick={() => handleDeleteClick(method.id)}
+                            onClick={() =>
+                              handleDeleteClick(method.id.toString())
+                            }
                             className="text-red-600 hover:text-red-900"
                             title="Delete"
+                            disabled={method.isDefault}
+                            style={
+                              method.isDefault
+                                ? { opacity: 0.5, cursor: "not-allowed" }
+                                : {}
+                            }
                           >
                             <Trash2 size={18} />
                           </button>

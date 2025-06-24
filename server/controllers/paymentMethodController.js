@@ -63,7 +63,7 @@ exports.createPaymentMethod = async (req, res, next) => {
 
   try {
     const method = await paymentMethodService.createPaymentMethod(req.body);
-    res.apiSuccess(method, "Payment method created", 201);
+    res.apiSuccess(method);
   } catch (err) {
     if (err.message.includes("already exists")) {
       return res.apiError(err.message, 400);
@@ -84,7 +84,7 @@ exports.updatePaymentMethod = async (req, res, next) => {
       req.body
     );
     if (!method) return res.apiError("Payment method not found", 404);
-    res.apiSuccess(method, "Payment method updated");
+    res.apiSuccess(method);
   } catch (err) {
     if (
       err.message.includes("Cannot update") ||
@@ -102,7 +102,7 @@ exports.deletePaymentMethod = async (req, res, next) => {
       req.params.id
     );
     if (!deleted) return res.apiError("Payment method not found", 404);
-    res.apiSuccess(null, "Payment method deleted");
+    res.apiSuccess(null);
   } catch (err) {
     if (err.message.includes("Cannot delete")) {
       return res.apiError(err.message, 400);
@@ -125,7 +125,7 @@ exports.updateBalance = async (req, res, next) => {
       Number(amount)
     );
     if (!method) return res.apiError("Payment method not found", 404);
-    res.apiSuccess(method, "Balance updated");
+    res.apiSuccess(method);
   } catch (err) {
     if (err.message === "Insufficient balance") {
       return res.apiError(err.message, 400);

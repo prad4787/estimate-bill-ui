@@ -4,14 +4,26 @@ import { Plus, Trash2, ArrowLeft } from "lucide-react";
 import toast from "react-hot-toast";
 import { useReceiptStore } from "../../store/receiptStore";
 import { useClientStore } from "../../store/clientStore";
+import { usePaymentMethodStore } from "../../store/paymentMethodStore";
 import { Transaction, Client, PaymentType, PaymentMethod } from "../../types";
 import ClientModal from "../../components/clients/ClientModal";
 import ClientSelect from "../../components/clients/ClientSelect";
+import SearchableSelect, {
+  SelectOption,
+} from "../../components/ui/SearchableSelect";
+
+const PAYMENT_TYPE_ID_MAP: Record<string, number> = {
+  cash: 1,
+  bank: 2,
+  wallet: 3,
+  cheque: 4,
+};
 
 const AddReceipt: React.FC = () => {
   const navigate = useNavigate();
   const { addReceipt } = useReceiptStore();
   const { clients, fetchClients } = useClientStore();
+  const { paymentMethods, fetchPaymentMethods } = usePaymentMethodStore();
 
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -27,19 +39,12 @@ const AddReceipt: React.FC = () => {
     },
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [savedPaymentMethods, setSavedPaymentMethods] = useState<
-    PaymentMethod[]
-  >([]);
   const [showClientModal, setShowClientModal] = useState(false);
 
   useEffect(() => {
     fetchClients();
-    // Load saved payment methods from localStorage
-    const methods = localStorage.getItem("billmanager-payment-methods");
-    if (methods) {
-      setSavedPaymentMethods(JSON.parse(methods));
-    }
-  }, [fetchClients]);
+    fetchPaymentMethods(1, 100);
+  }, [fetchClients, fetchPaymentMethods]);
 
   const handleClientCreated = (newClient: Client) => {
     setSelectedClient(newClient);
@@ -104,7 +109,7 @@ const AddReceipt: React.FC = () => {
   };
 
   const getRelevantMethods = (paymentType: PaymentType): PaymentMethod[] => {
-    return savedPaymentMethods.filter((method) => method.type === paymentType);
+    return paymentMethods.filter((method) => method.type === paymentType);
   };
 
   const formatPaymentMethodDisplay = (method: PaymentMethod): string => {
@@ -208,24 +213,20 @@ const AddReceipt: React.FC = () => {
 
     // For bank and wallet transactions
     const relevantMethods = getRelevantMethods(transaction.paymentType);
-
-    if (relevantMethods.length === 0) {
-      return (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
-          <p className="text-sm text-red-800 mb-3">
-            No {transaction.paymentType} accounts found. Please add a{" "}
-            {transaction.paymentType} account first.
-          </p>
-          <button
-            type="button"
-            onClick={() => navigate("/payments")}
-            className="btn btn-outline btn-sm"
-          >
-            Manage Payment Methods
-          </button>
-        </div>
-      );
-    }
+    const options: SelectOption[] = relevantMethods.map((method) => ({
+      id: method.id.toString(),
+      name: formatPaymentMethodDisplay(method),
+      type: method.type,
+      accountName: method.accountName,
+      accountNumber: method.accountNumber,
+      balance: method.balance,
+      createdAt: method.createdAt,
+      updatedAt: method.updatedAt,
+      isDefault: method.isDefault,
+    }));
+    const selected =
+      options.find((opt) => opt.id === String(transaction.paymentMethodId)) ||
+      null;
 
     return (
       <div className="space-y-3">
@@ -233,58 +234,24 @@ const AddReceipt: React.FC = () => {
           Select{" "}
           {transaction.paymentType === "bank" ? "Bank Account" : "E-Wallet"}
         </label>
-        <div className="space-y-2">
-          {relevantMethods.map((method) => (
-            <div
-              key={method.id}
-              className={`p-3 border rounded-xl cursor-pointer transition-all duration-200 ${
-                transaction.paymentMethodId === method.id
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-              }`}
-              onClick={() =>
-                handleTransactionChange(index, "paymentMethodId", method.id)
-              }
-            >
-              <div className="flex justify-between items-center">
-                <div>
-                  <div className="font-medium text-gray-900">
-                    {formatPaymentMethodDisplay(method)}
-                  </div>
-                  {method.balance !== undefined && (
-                    <div className="text-xs text-gray-500 mt-1">
-                      Balance: ${method.balance.toFixed(2)}
-                    </div>
-                  )}
-                </div>
-                <div
-                  className={`w-4 h-4 rounded-full border-2 ${
-                    transaction.paymentMethodId === method.id
-                      ? "border-blue-500 bg-blue-500"
-                      : "border-gray-300"
-                  }`}
-                >
-                  {transaction.paymentMethodId === method.id && (
-                    <div className="w-2 h-2 bg-white rounded-full m-0.5"></div>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {transaction.paymentMethodId && (
-          <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-xl">
-            <div className="text-sm text-green-800">
-              <strong>Selected:</strong>{" "}
-              {formatPaymentMethodDisplay(
-                relevantMethods.find(
-                  (m) => m.id === transaction.paymentMethodId
-                )!
-              )}
-            </div>
-          </div>
-        )}
+        <SearchableSelect
+          options={options}
+          value={selected}
+          onChange={(option) =>
+            handleTransactionChange(
+              index,
+              "paymentMethodId",
+              option ? Number(option.id) : ""
+            )
+          }
+          placeholder={`Select a ${
+            transaction.paymentType === "bank" ? "bank account" : "wallet"
+          }...`}
+          searchPlaceholder={`Search ${
+            transaction.paymentType === "bank" ? "bank accounts" : "wallets"
+          }...`}
+          required
+        />
       </div>
     );
   };
@@ -335,13 +302,23 @@ const AddReceipt: React.FC = () => {
       await addReceipt({
         date,
         clientId: selectedClient.id,
-        transactions: transactions.map((t) => ({
-          ...t,
-          amount: Number(t.amount),
-          paymentMethodId: t.paymentMethodId
-            ? Number(t.paymentMethodId)
-            : undefined,
-        })),
+        transactions: transactions.map((t) => {
+          const { paymentType, ...rest } = t;
+          const tx = {
+            ...rest,
+            amount: Number(t.amount),
+            paymentType: PAYMENT_TYPE_ID_MAP[paymentType],
+          };
+          if (
+            t.paymentMethodId !== undefined &&
+            (typeof t.paymentMethodId !== "string" ||
+              t.paymentMethodId !== "") &&
+            !isNaN(Number(t.paymentMethodId))
+          ) {
+            tx.paymentMethodId = Number(t.paymentMethodId);
+          }
+          return tx;
+        }) as any,
       });
 
       toast.success("Receipt created successfully");

@@ -52,6 +52,8 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
     return errors;
   };
 
+  const hideBalance = import.meta.env.VITE_HIDE_PAYMENT_BALANCE === "true";
+
   return (
     <Form<PaymentMethodFormData>
       initialValues={initialValues}
@@ -181,41 +183,42 @@ const PaymentMethodForm: React.FC<PaymentMethodFormProps> = ({
             </div>
 
             <div className="space-y-6">
-              {(values.type === "cash" ||
-                values.type === "bank" ||
-                values.type === "wallet") && (
-                <div>
-                  <label htmlFor="balance" className="form-label">
-                    Current Balance
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted">
-                      $
-                    </span>
-                    <input
-                      type="text"
-                      id="balance"
-                      name="balance"
-                      value={values.balance}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      className={`form-input pl-8 ${
-                        errors.balance && touched.balance ? "error" : ""
-                      }`}
-                      placeholder="0.00"
-                    />
-                  </div>
-                  {errors.balance && touched.balance && (
-                    <p className="form-error">
-                      <X size={14} className="mr-1.5" />
-                      {errors.balance}
+              {!hideBalance &&
+                (values.type === "cash" ||
+                  values.type === "bank" ||
+                  values.type === "wallet") && (
+                  <div>
+                    <label htmlFor="balance" className="form-label">
+                      Current Balance
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted">
+                        $
+                      </span>
+                      <input
+                        type="text"
+                        id="balance"
+                        name="balance"
+                        value={values.balance}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        className={`form-input pl-8 ${
+                          errors.balance && touched.balance ? "error" : ""
+                        }`}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    {errors.balance && touched.balance && (
+                      <p className="form-error">
+                        <X size={14} className="mr-1.5" />
+                        {errors.balance}
+                      </p>
+                    )}
+                    <p className="form-helper">
+                      Enter the current balance for this payment method
                     </p>
-                  )}
-                  <p className="form-helper">
-                    Enter the current balance for this payment method
-                  </p>
-                </div>
-              )}
+                  </div>
+                )}
             </div>
           </div>
 

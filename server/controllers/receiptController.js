@@ -1,5 +1,12 @@
 const receiptService = require("../services/receiptService");
 
+const PAYMENT_TYPE_MAP = {
+  1: "cash",
+  2: "bank",
+  3: "wallet",
+  4: "cheque",
+};
+
 const validateTransaction = (transaction) => {
   const errors = [];
 
@@ -84,21 +91,35 @@ exports.createReceipt = async (req, res) => {
   try {
     const { date, clientId, notes, transactions } = req.body;
 
+    // Map integer paymentType to string if needed
+    const mappedTransactions = transactions.map((t) => ({
+      ...t,
+      paymentType:
+        typeof t.paymentType === "number"
+          ? PAYMENT_TYPE_MAP[t.paymentType] || t.paymentType
+          : t.paymentType,
+    }));
+
     // Validate required fields
-    if (!date || !clientId || !transactions || !transactions.length) {
+    if (
+      !date ||
+      !clientId ||
+      !mappedTransactions ||
+      !mappedTransactions.length
+    ) {
       return res.apiError(
         "Date, client, and at least one transaction are required"
       );
     }
 
     // Validate each transaction
-    const transactionErrors = transactions.flatMap(validateTransaction);
+    const transactionErrors = mappedTransactions.flatMap(validateTransaction);
     if (transactionErrors.length > 0) {
       return res.apiValidationError(transactionErrors);
     }
 
     // Calculate total from transactions
-    const total = transactions.reduce(
+    const total = mappedTransactions.reduce(
       (sum, t) => sum + parseFloat(t.amount),
       0
     );
@@ -107,7 +128,7 @@ exports.createReceipt = async (req, res) => {
       date,
       clientId,
       notes,
-      transactions,
+      transactions: mappedTransactions,
       total,
     });
 
@@ -121,21 +142,35 @@ exports.updateReceipt = async (req, res) => {
   try {
     const { date, clientId, notes, transactions } = req.body;
 
+    // Map integer paymentType to string if needed
+    const mappedTransactions = transactions.map((t) => ({
+      ...t,
+      paymentType:
+        typeof t.paymentType === "number"
+          ? PAYMENT_TYPE_MAP[t.paymentType] || t.paymentType
+          : t.paymentType,
+    }));
+
     // Validate required fields
-    if (!date || !clientId || !transactions || !transactions.length) {
+    if (
+      !date ||
+      !clientId ||
+      !mappedTransactions ||
+      !mappedTransactions.length
+    ) {
       return res.apiError(
         "Date, client, and at least one transaction are required"
       );
     }
 
     // Calculate total from transactions
-    const total = transactions.reduce((sum, t) => sum + t.amount, 0);
+    const total = mappedTransactions.reduce((sum, t) => sum + t.amount, 0);
 
     const receipt = await receiptService.updateReceipt(req.params.id, {
       date,
       clientId,
       notes,
-      transactions,
+      transactions: mappedTransactions,
       total,
     });
 

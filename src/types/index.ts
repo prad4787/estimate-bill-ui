@@ -263,6 +263,7 @@ export interface PaymentMethod {
   balance?: number;
   createdAt: string;
   updatedAt: string;
+  isDefault?: boolean;
 }
 
 export interface PaymentMethodFormData {
