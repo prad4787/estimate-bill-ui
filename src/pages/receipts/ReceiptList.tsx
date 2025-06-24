@@ -41,7 +41,7 @@ const ReceiptList: React.FC = () => {
     fetchOrganization();
   }, [fetchReceipts, fetchClients, fetchOrganization, currentPage]);
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     if (window.confirm("Are you sure you want to delete this receipt?")) {
       try {
         await deleteReceipt(id);
@@ -54,7 +54,7 @@ const ReceiptList: React.FC = () => {
     }
   };
 
-  const handlePrint = (receiptId: string) => {
+  const handlePrint = (receiptId: number) => {
     const receipt = receipts.find((r) => r.id === receiptId);
     const client = receipt
       ? clients.find((c) => c.id === receipt.clientId)
@@ -304,7 +304,7 @@ const ReceiptList: React.FC = () => {
     <div class="bill-title">BILL</div>
     
     <div class="order-info">
-        <div>Order: ${receipt.id.substring(0, 8)} - ${
+        <div>Order: ${receipt.id} - ${
       formatDate(receipt.date).split(" ")[1]
     }</div>
         <div>Employee: ${client.name}</div>
@@ -382,7 +382,7 @@ const ReceiptList: React.FC = () => {
     }).format(amount);
   };
 
-  const getClientName = (clientId: string) => {
+  const getClientName = (clientId: number) => {
     return (
       clients.find((client) => client.id === clientId)?.name || "Unknown Client"
     );
@@ -527,7 +527,7 @@ const ReceiptList: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <div className="inline-flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-col">
                         <span className="badge badge-primary">
                           {receipt.transactions.length} payment
                           {receipt.transactions.length !== 1 ? "s" : ""}

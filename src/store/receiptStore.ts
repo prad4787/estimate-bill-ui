@@ -22,7 +22,7 @@ interface ReceiptState {
     id: string,
     data: Partial<Receipt>
   ) => Promise<Receipt | null>;
-  deleteReceipt: (id: string) => Promise<boolean>;
+  deleteReceipt: (id: number) => Promise<boolean>;
   getReceipt: (id: string) => Promise<Receipt | null>;
 }
 
@@ -102,7 +102,7 @@ export const useReceiptStore = create<ReceiptState>((set) => ({
     }
   },
 
-  deleteReceipt: async (id: string) => {
+  deleteReceipt: async (id: number) => {
     try {
       await api.delete(`/receipts/${id}`);
       set((state) => ({

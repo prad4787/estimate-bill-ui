@@ -86,13 +86,17 @@ exports.createReceipt = async (receiptData) => {
     throw new Error("Client not found");
   }
 
-  // Validate payment methods exist
-  const paymentMethodIds = transactions.map((t) => t.paymentMethodId);
-  const paymentMethods = await PaymentMethodModel.findAll({
-    where: { id: { [Op.in]: paymentMethodIds } },
-  });
-  if (paymentMethods.length !== paymentMethodIds.length) {
-    throw new Error("One or more payment methods not found");
+  // Validate payment methods exist only for non-cash transactions
+  const paymentMethodIds = transactions
+    .filter((t) => t.paymentType !== "cash" && t.paymentMethodId)
+    .map((t) => t.paymentMethodId);
+  if (paymentMethodIds.length > 0) {
+    const paymentMethods = await PaymentMethodModel.findAll({
+      where: { id: { [Op.in]: paymentMethodIds } },
+    });
+    if (paymentMethods.length !== paymentMethodIds.length) {
+      throw new Error("One or more payment methods not found");
+    }
   }
 
   const result = await ReceiptModel.sequelize.transaction(async (t) => {
