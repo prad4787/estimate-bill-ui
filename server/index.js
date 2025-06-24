@@ -5,8 +5,6 @@ const path = require("path");
 const apiResponse = require("./utils/apiResponse");
 const indexRoutes = require("./routes");
 const cors = require("cors");
-const receiptRoutes = require("./routes/receipts");
-const estimateRoutes = require("./routes/estimate");
 
 // Enable CORS
 app.use(cors());
@@ -94,7 +92,7 @@ app.use((err, req, res, next) => {
 });
 
 // Serve static files from React build last
-const distPath = path.join(__dirname, "../dist");
+const distPath = path.join(__dirname, "./public");
 app.use(express.static(distPath));
 
 // Catch-all route to serve index.html for client-side routing
